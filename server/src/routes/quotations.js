@@ -37,7 +37,7 @@ router.get('/:id', async (req, res) => {
 
 // Create quotation
 router.post('/', async (req, res) => {
-    const { client_id, client_name, date, items, status, discount_type, discount_value } = req.body;
+    const { client_id, client_name, client_address, client_gstin, date, items, status, discount_type, discount_value } = req.body;
 
     if (!client_name || !date || !items || !Array.isArray(items)) {
         return res.status(400).json({ error: 'Missing required fields' });
@@ -48,8 +48,8 @@ router.post('/', async (req, res) => {
         await db.exec('BEGIN TRANSACTION');
 
         const result = await db.run(
-            'INSERT INTO quotations (client_id, client_name, date, status, discount_type, discount_value) VALUES (?, ?, ?, ?, ?, ?)',
-            [client_id, client_name, date, status || 'DRAFT', discount_type, discount_value || 0]
+            'INSERT INTO quotations (client_id, client_name, client_address, client_gstin, date, status, discount_type, discount_value, notes, terms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [client_id, client_name, client_address || '', client_gstin || '', date, status || 'DRAFT', discount_type, discount_value || 0, req.body.notes || '', req.body.terms || '']
         );
         const quoteId = result.lastID;
 
@@ -94,7 +94,7 @@ router.post('/', async (req, res) => {
 // Update quotation
 router.put('/:id', async (req, res) => {
     const { id } = req.params;
-    const { client_id, client_name, date, items, status, discount_type, discount_value } = req.body;
+    const { client_id, client_name, client_address, client_gstin, date, items, status, discount_type, discount_value } = req.body;
 
     try {
         const db = getDB();
@@ -102,8 +102,8 @@ router.put('/:id', async (req, res) => {
 
         // Update Quote Details
         await db.run(
-            'UPDATE quotations SET client_id = ?, client_name = ?, date = ?, status = ?, discount_type = ?, discount_value = ? WHERE id = ?',
-            [client_id, client_name, date, status, discount_type, discount_value, id]
+            'UPDATE quotations SET client_id = ?, client_name = ?, client_address = ?, client_gstin = ?, date = ?, status = ?, discount_type = ?, discount_value = ?, notes = ?, terms = ? WHERE id = ?',
+            [client_id, client_name, client_address || '', client_gstin || '', date, status, discount_type, discount_value, req.body.notes || '', req.body.terms || '', id]
         );
 
         // Delete existing items
@@ -141,6 +141,65 @@ router.put('/:id', async (req, res) => {
 
         await db.exec('COMMIT');
         res.json({ message: 'Quotation updated' });
+    } catch (err) {
+        await getDB().exec('ROLLBACK');
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Duplicate quotation
+router.post('/duplicate/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const db = getDB();
+
+        // 1. Get Original Quote
+        const quote = await db.get('SELECT * FROM quotations WHERE id = ?', [id]);
+        if (!quote) return res.status(404).json({ error: 'Quotation not found' });
+
+        // 2. Get Items
+        const items = await db.all('SELECT * FROM quotation_items WHERE quotation_id = ?', [id]);
+
+        await db.exec('BEGIN TRANSACTION');
+
+        // 3. Insert New Quote (Status DRAFT, Today's Date)
+        const today = new Date().toISOString().split('T')[0];
+        const resQuote = await db.run(
+            `INSERT INTO quotations (client_id, client_name, client_address, client_gstin, date, status, discount_type, discount_value, notes, terms) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [quote.client_id, quote.client_name, quote.client_address, quote.client_gstin, today, 'DRAFT', quote.discount_type, quote.discount_value, quote.notes, quote.terms]
+        );
+        const newId = resQuote.lastID;
+
+        // 4. Insert Items
+        const stmt = await db.prepare(`
+            INSERT INTO quotation_items 
+            (quotation_id, item_id, model_number, name, description, note, quantity, is_manual, rate, hsn_code, tax_rate, discount, amount) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+
+        for (const item of items) {
+            await stmt.run(
+                newId,
+                item.item_id,
+                item.model_number,
+                item.name,
+                item.description,
+                item.note,
+                item.quantity,
+                item.is_manual,
+                item.rate,
+                item.hsn_code,
+                item.tax_rate,
+                item.discount,
+                item.amount
+            );
+        }
+        await stmt.finalize();
+
+        await db.exec('COMMIT');
+        res.status(201).json({ id: newId, message: 'Quotation duplicated' });
+
     } catch (err) {
         await getDB().exec('ROLLBACK');
         res.status(500).json({ error: err.message });

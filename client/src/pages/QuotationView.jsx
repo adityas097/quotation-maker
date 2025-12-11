@@ -74,6 +74,10 @@ const QuotationView = () => {
         return { subtotal, totalTax, discountAmount, grandTotal, taxBreakdown };
     };
 
+    const convertNumberToWords = (amount) => {
+        return `Rupees ${Math.round(amount)} Only`;
+    }
+
     if (loading || !quote) return <div className="p-8 text-center">Loading...</div>;
 
     const { subtotal, totalTax, discountAmount, grandTotal, taxBreakdown } = calculateTotals();
@@ -81,6 +85,7 @@ const QuotationView = () => {
 
     return (
         <div className="max-w-4xl mx-auto print-container" style={{ padding: '20px' }}>
+            {/* Action Buttons */}
             <div className="flex-between mb-6 no-print">
                 <div className="flex gap-2">
                     <Link to="/quotations" className="btn btn-secondary">
@@ -97,111 +102,180 @@ const QuotationView = () => {
                 </button>
             </div>
 
-            <div className="card" style={{ minHeight: '80vh', border: '1px solid #eee', padding: '40px' }}>
-                {/* Header */}
-                <div style={{ borderBottom: '2px solid var(--primary)', paddingBottom: '1.5rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between' }}>
+            {/* Main Document Card - Content Flow */}
+            <div className="card quote-paper" style={{ minHeight: '80vh', border: '1px solid #ddd', padding: '40px', position: 'relative', marginBottom: '100px' }}>
+
+                {/* Header: Company Details (From) - First Page Flow */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid var(--primary-color)', paddingBottom: '20px', marginBottom: '20px' }}>
                     <div>
-                        <h1 style={{ fontSize: '2.5rem', color: 'var(--primary)', lineHeight: 1, marginBottom: '0.5rem' }}>
-                            {isInvoice ? 'INVOICE' : 'QUOTATION'}
-                        </h1>
-                        <p style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>
-                            #{isInvoice ? (quote.invoice_number || `INV-REF-${quote.id}`) : `QT-${quote.id}`}
+                        <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>ELIZA INFOTECH</h1>
+                        <p style={{ margin: '5px 0', fontSize: '1rem', fontWeight: 500 }}>29/20, 8 MARLA, PANIPAT - 132103</p>
+                        <p style={{ margin: '0', fontSize: '0.9rem' }}><strong>GSTIN:</strong> 06HHQPS1919L1ZJ</p>
+                        <p style={{ margin: '5px 0 0 0', fontSize: '0.9rem' }}>
+                            <span style={{ marginRight: '15px' }}>📞 +91 893082398</span>
+                            <span style={{ marginRight: '15px' }}>🌐 elizainfotech.com</span>
+                            <br />
+                            <span>📧 infotecheliza@gmail.com</span>
                         </p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                        <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>{quote.client_name}</h3>
-                        <p style={{ color: 'var(--text-secondary)' }}>Date: {quote.date}</p>
-                        {isInvoice && <span className="badge badge-success" style={{ marginTop: '5px', display: 'inline-block' }}>INVOICED</span>}
+                        <h2 style={{ fontSize: '1.5rem', color: '#555', marginTop: '0' }}>{isInvoice ? 'TAX INVOICE' : 'QUOTATION'}</h2>
+                        <table style={{ float: 'right', fontSize: '0.9rem' }}>
+                            <tbody>
+                                <tr>
+                                    <td style={{ textAlign: 'right', paddingRight: '10px', color: '#666' }}># :</td>
+                                    <td style={{ fontWeight: 600 }}>{isInvoice ? quote.invoice_number : `QT-${quote.id}`}</td>
+                                </tr>
+                                <tr>
+                                    <td style={{ textAlign: 'right', paddingRight: '10px', color: '#666' }}>Date :</td>
+                                    <td style={{ fontWeight: 600 }}>{quote.date}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                {/* Items Table */}
-                <div className="table-container">
+                {/* Client Details (To) */}
+                <div style={{ marginBottom: '30px' }}>
+                    <h3 style={{ fontSize: '0.85rem', textTransform: 'uppercase', color: '#888', marginBottom: '5px' }}>Bill To:</h3>
+                    <p style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 5px 0' }}>{quote.client_name}</p>
+                    {quote.client_address && <p style={{ margin: '0', fontSize: '0.95rem', maxWidth: '300px' }}>{quote.client_address}</p>}
+                    {quote.client_gstin && <p style={{ margin: '5px 0 0 0', fontSize: '0.9rem' }}><strong>GSTIN:</strong> {quote.client_gstin}</p>}
+                </div>
+
+                {/* Items Table - Natural Flow */}
+                <div className="table-container" style={{ marginBottom: '20px' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
-                            <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #ddd' }}>
-                                <th style={{ padding: '10px', textAlign: 'left' }}>#</th>
-                                <th style={{ padding: '10px', textAlign: 'left' }}>Item & Description</th>
-                                <th style={{ padding: '10px', textAlign: 'left' }}>HSN</th>
-                                <th style={{ padding: '10px', textAlign: 'right' }}>Qty</th>
-                                <th style={{ padding: '10px', textAlign: 'right' }}>Rate</th>
-                                <th style={{ padding: '10px', textAlign: 'right' }}>Amount</th>
+                            <tr style={{ background: '#f5f5f5', borderBottom: '2px solid #ddd' }}>
+                                <th style={{ textAlign: 'left', padding: '10px' }}>#</th>
+                                <th style={{ textAlign: 'left', padding: '10px' }}>Description</th>
+                                <th style={{ textAlign: 'left', padding: '10px' }}>HSN</th>
+                                <th style={{ textAlign: 'right', padding: '10px' }}>Qty</th>
+                                <th style={{ textAlign: 'right', padding: '10px' }}>Rate</th>
+                                <th style={{ textAlign: 'right', padding: '10px' }}>Tax</th>
+                                <th style={{ textAlign: 'right', padding: '10px' }}>Total</th>
                             </tr>
                         </thead>
                         <tbody>
                             {quote.items.map((item, index) => (
-                                <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
+                                <tr key={item.id} style={{ borderBottom: '1px solid #eee' }}>
                                     <td style={{ padding: '10px' }}>{index + 1}</td>
                                     <td style={{ padding: '10px' }}>
                                         <div style={{ fontWeight: 600 }}>{item.name}</div>
-                                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{item.model_number}</div>
-                                        {item.description && <div style={{ fontSize: '0.85rem', color: '#666' }}>{item.description}</div>}
+                                        {item.model_number && <div style={{ fontSize: '0.8rem', color: '#666' }}>Model: {item.model_number}</div>}
+                                        {item.description && <div style={{ fontSize: '0.85rem', color: '#555' }}>{item.description}</div>}
                                     </td>
                                     <td style={{ padding: '10px' }}>{item.hsn_code}</td>
-                                    <td style={{ padding: '10px', textAlign: 'right' }}>{item.quantity}</td>
-                                    <td style={{ padding: '10px', textAlign: 'right' }}>{item.rate?.toFixed(2)}</td>
-                                    <td style={{ padding: '10px', textAlign: 'right' }}>{(item.quantity * item.rate).toFixed(2)}</td>
+                                    <td style={{ textAlign: 'right', padding: '10px' }}>{item.quantity}</td>
+                                    <td style={{ textAlign: 'right', padding: '10px' }}>₹{item.rate.toFixed(2)}</td>
+                                    <td style={{ textAlign: 'right', padding: '10px' }}>{item.tax_rate}%</td>
+                                    <td style={{ textAlign: 'right', padding: '10px', fontWeight: 600 }}>
+                                        ₹{(item.quantity * item.rate).toFixed(2)}
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
 
-                {/* Footer: Tax Analysis & Totals */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem', marginTop: '3rem' }}>
+                {/* Lower Section: Bank Details & Totals - Natural Flow Pushes to Next Page if needed */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px', gap: '30px', flexWrap: 'wrap', pageBreakInside: 'avoid' }}>
 
-                    {/* Tax Analysis */}
-                    <div>
-                        <h4 style={{ fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Tax Analysis</h4>
-                        <table style={{ width: '100%', fontSize: '0.85rem', border: '1px solid #eee' }}>
-                            <thead>
-                                <tr style={{ background: '#f8f9fa' }}>
-                                    <th style={{ padding: '5px', textAlign: 'left' }}>Tax Class</th>
-                                    <th style={{ padding: '5px', textAlign: 'right' }}>Taxable</th>
-                                    <th style={{ padding: '5px', textAlign: 'right' }}>Tax Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {Object.entries(taxBreakdown).map(([rate, data]) => (
-                                    <tr key={rate} style={{ borderBottom: '1px solid #eee' }}>
-                                        <td style={{ padding: '5px' }}>GST {rate}%</td>
-                                        <td style={{ padding: '5px', textAlign: 'right' }}>{data.taxable.toFixed(2)}</td>
-                                        <td style={{ padding: '5px', textAlign: 'right' }}>{data.tax.toFixed(2)}</td>
+                    {/* Left Side: Bank Details, Terms, Notes */}
+                    <div style={{ flex: 1, minWidth: '300px' }}>
+                        {/* Bank Details */}
+                        <div style={{ border: '1px solid #eee', padding: '10px', borderRadius: '4px', marginBottom: '15px', backgroundColor: '#f9fafb' }}>
+                            <h4 style={{ margin: '0 0 5px 0', fontSize: '0.8rem', fontWeight: 700, borderBottom: '1px solid #ddd', paddingBottom: '2px' }}>Bank Details</h4>
+                            <table style={{ fontSize: '0.75rem', width: '100%', lineHeight: '1.4' }}>
+                                <tbody>
+                                    <tr>
+                                        <td style={{ color: '#666', width: '70px', padding: '1px' }}>Bank:</td>
+                                        <td style={{ padding: '1px' }}><strong>Central Bank of India</strong></td>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                    <tr>
+                                        <td style={{ color: '#666', padding: '1px' }}>A/C Name:</td>
+                                        <td style={{ padding: '1px' }}><strong>Eliza Infotech</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td style={{ color: '#666', padding: '1px' }}>A/C No:</td>
+                                        <td style={{ padding: '1px' }}><strong>5213284825</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td style={{ color: '#666', padding: '1px' }}>IFSC:</td>
+                                        <td style={{ padding: '1px' }}><strong>CBIN0283246</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td style={{ color: '#666', padding: '1px' }}>Branch:</td>
+                                        <td style={{ padding: '1px' }}>Model Town, Panipat</td>
+                                    </tr>
+                                    <tr>
+                                        <td style={{ color: '#666', padding: '1px' }}>UPI:</td>
+                                        <td style={{ padding: '1px' }}><strong>8930082398</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Notes */}
+                        {quote.notes && (
+                            <div style={{ marginBottom: '15px', fontSize: '0.8rem' }}>
+                                <strong>Notes:</strong>
+                                <p style={{ margin: '5px 0', whiteSpace: 'pre-line', color: '#444' }}>{quote.notes}</p>
+                            </div>
+                        )}
+
+                        {/* Terms */}
+                        {quote.terms && (
+                            <div style={{ marginBottom: '15px', fontSize: '0.8rem' }}>
+                                <strong>Terms & Conditions:</strong>
+                                <p style={{ margin: '5px 0', whiteSpace: 'pre-line', color: '#444' }}>{quote.terms}</p>
+                            </div>
+                        )}
                     </div>
 
-                    {/* Totals */}
-                    <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
-                            <span>Sub Total:</span>
+                    {/* Right Side: Totals */}
+                    <div style={{ width: '300px' }}>
+                        <div className="flex-between" style={{ padding: '5px 0' }}>
+                            <span>Subtotal:</span>
                             <span>₹{subtotal.toFixed(2)}</span>
                         </div>
+                        <div className="flex-between" style={{ padding: '5px 0' }}>
+                            <span>Total Tax:</span>
+                            <span>₹{totalTax.toFixed(2)}</span>
+                        </div>
                         {discountAmount > 0 && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', color: 'var(--danger)' }}>
+                            <div className="flex-between" style={{ padding: '5px 0', color: 'red' }}>
                                 <span>Discount:</span>
                                 <span>- ₹{discountAmount.toFixed(2)}</span>
                             </div>
                         )}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
-                            <span>Tax:</span>
-                            <span>₹{totalTax.toFixed(2)}</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderTop: '2px solid #ddd', fontSize: '1.25rem', fontWeight: 700 }}>
+                        <div className="flex-between" style={{ padding: '10px 0', borderTop: '2px solid #ddd', fontSize: '1.2rem', fontWeight: 800 }}>
                             <span>Grand Total:</span>
-                            <span>₹{grandTotal.toFixed(2)}</span>
+                            <span>₹{grandTotal.toFixed(0)}</span>
                         </div>
-                        <div style={{ marginTop: '1rem', fontSize: '0.8rem', color: '#666', borderTop: '1px solid #eee', paddingTop: '10px' }}>
-                            <p>Amount in Words: {convertNumberToWords(Math.round(grandTotal))} Only</p>
+                        <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '5px', textAlign: 'right' }}>
+                            Amount (in words):<br /> {convertNumberToWords(grandTotal)}
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div style={{ marginTop: '4rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-                    <p>This is a computer generated document.</p>
-                </div>
+            {/* Print Footer - Fixed on Every Page */}
+            <div className="print-footer" style={{
+                marginTop: 'auto',
+                padding: '10px',
+                textAlign: 'center',
+                fontSize: '0.75rem',
+                color: '#666',
+                borderTop: '1px solid #eee',
+                background: 'white'
+            }}>
+                <p style={{ fontWeight: 700, margin: '0 0 5px 0' }}>CONTACT FOR:</p>
+                <p style={{ margin: 0, lineHeight: '1.4' }}>
+                    CCTV CAMERAS • INTERNET NETWORKING EQUIPMENT • FTTH AND RADIO FREQUENCY NETWORKING DEVICES<br />
+                    INTERNET MARKETING • WEB & APP DEVELOPMENT • SOCIAL MEDIA MANAGEMENT • SEO AND MORE
+                </p>
             </div>
 
             <style>{`
@@ -209,26 +283,29 @@ const QuotationView = () => {
           .no-print { display: none !important; }
           .app-container { min-height: auto; width: 100%; margin: 0; padding: 0; }
           .navbar { display: none; }
-          .card { box-shadow: none; border: none !important; padding: 0 !important; }
+          .card { box-shadow: none; border: none !important; padding: 0 !important; margin: 0 !important; }
           body { background: white; margin: 0; padding: 0; }
-          .print-container { max-width: 100% !important; margin: 0 !important; }
+          .print-container { max-width: 100% !important; margin: 0 !important; width: 100%; }
+          
+          /* Footer Fix */
+          .print-footer {
+             position: fixed;
+             bottom: 0;
+             left: 0;
+             right: 0;
+             height: 50px; /* Approx height of footer content */
+             background: white;
+          }
+          
+          /* Page Margin to prevent overlap with fixed footer */
+          @page {
+             margin: 10mm;
+             margin-bottom: 25mm; /* 1 inch approx for footer space */
+          }
         }
       `}</style>
         </div>
     );
 };
-
-// Simple Number to Words Converter (Indian Format approx)
-function convertNumberToWords(amount) {
-    // Basic placeholder. Real implementation needs a library or a bigger function.
-    // For this demo, just returning the number string or a placeholder.
-    // Implementing a simple version...
-    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
-    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-    const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
-
-    if (amount === 0) return "Zero";
-    return `(Rupees ${amount})`; // Placeholder
-}
 
 export default QuotationView;

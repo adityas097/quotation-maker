@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Plus, Trash2, Save, ArrowLeft } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
 import Autocomplete from '../components/Autocomplete';
 
 const CreateQuote = () => {
-    const navigate = useNavigate();
     const { id } = useParams();
+    const navigate = useNavigate();
+
+    // Client State
     const [clientName, setClientName] = useState('');
     const [clientId, setClientId] = useState(null);
+    const [clientAddress, setClientAddress] = useState('');
+    const [clientGstin, setClientGstin] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [status, setStatus] = useState('DRAFT');
 
-    // Discount/Totals
-    const [discountType, setDiscountType] = useState('PERCENT'); // PERCENT or FIXED
-    const [discountValue, setDiscountValue] = useState(0);
-
+    // Items State
     const [items, setItems] = useState([
         {
             id: Date.now(),
@@ -22,7 +23,6 @@ const CreateQuote = () => {
             model_number: '',
             name: '',
             description: '',
-            note: '',
             hsn_code: '',
             rate: 0,
             tax_rate: 0,
@@ -32,8 +32,18 @@ const CreateQuote = () => {
     ]);
     const [loading, setLoading] = useState(false);
 
+    // Discount & Extra Fields
+    const [discountType, setDiscountType] = useState('PERCENT'); // PERCENT or FIXED
+    const [discountValue, setDiscountValue] = useState(0);
+    const [notes, setNotes] = useState(''); // New
+    const [terms, setTerms] = useState(''); // New
+
     useEffect(() => {
         if (id) fetchQuoteData();
+        if (!id) {
+            // Default Terms 
+            setTerms("1. Goods once sold will not be taken back.\n2. Interest @ 18% p.a. will be charged if payment is not made within the due date.\n3. Subject to Panipat Jurisdiction only.");
+        }
     }, [id]);
 
     const fetchQuoteData = async () => {
@@ -44,10 +54,14 @@ const CreateQuote = () => {
                 const data = await res.json();
                 setClientName(data.client_name);
                 setClientId(data.client_id);
+                setClientAddress(data.client_address || '');
+                setClientGstin(data.client_gstin || '');
                 setDate(data.date);
                 setStatus(data.status || 'DRAFT');
                 setDiscountType(data.discount_type || 'PERCENT');
                 setDiscountValue(data.discount_value || 0);
+                setNotes(data.notes || '');
+                setTerms(data.terms || '');
 
                 const mappedItems = data.items.map(i => ({
                     id: i.id || Date.now() + Math.random(),
@@ -79,15 +93,22 @@ const CreateQuote = () => {
     const fetchItems = async (query) => {
         const res = await fetch('http://localhost:3000/api/items');
         const allItems = await res.json();
+        const q = query.toLowerCase();
         return allItems.filter(i =>
-            i.name.toLowerCase().includes(query.toLowerCase()) ||
-            (i.model_number && i.model_number.toLowerCase().includes(query.toLowerCase()))
-        );
+            i.name.toLowerCase().includes(q) ||
+            (i.model_number && i.model_number.toLowerCase().includes(q)) ||
+            (i.description && i.description.toLowerCase().includes(q))
+        ).map(i => ({
+            ...i,
+            label: `${i.name} ${i.model_number ? `(${i.model_number})` : ''} - ${i.description || 'No Desc'}`
+        }));
     };
 
     const handleClientSelect = (client) => {
         setClientName(client.name);
         setClientId(client.id);
+        setClientAddress(client.address || '');
+        setClientGstin(client.gstin || '');
     };
 
     const handleItemSelect = (index, item) => {
@@ -95,10 +116,10 @@ const CreateQuote = () => {
         newItems[index] = {
             ...newItems[index],
             item_id: item.id,
-            model_number: item.model_number || '',
+            model_number: item.model_number || item.model || '',
             name: item.name,
-            description: item.description || '',
-            hsn_code: item.hsn_code || '',
+            description: item.description || item.desc || '',
+            hsn_code: item.hsn_code || item.hsn || '',
             rate: item.rate || 0,
             tax_rate: item.tax_rate || 0,
             is_manual: false
@@ -108,22 +129,16 @@ const CreateQuote = () => {
 
     const updateItemRow = (index, field, value) => {
         const newItems = [...items];
-        let val = value;
-        if (['quantity', 'rate', 'tax_rate'].includes(field)) {
-            val = parseFloat(value) || 0;
-        }
-        newItems[index] = { ...newItems[index], [field]: val };
+        newItems[index][field] = value;
         setItems(newItems);
     };
 
     const addItemRow = () => {
         setItems([...items, {
             id: Date.now(),
-            item_id: null,
             model_number: '',
             name: '',
             description: '',
-            note: '',
             hsn_code: '',
             rate: 0,
             tax_rate: 0,
@@ -134,13 +149,10 @@ const CreateQuote = () => {
 
     const removeItemRow = (index) => {
         if (items.length > 1) {
-            const newItems = [...items];
-            newItems.splice(index, 1);
-            setItems(newItems);
+            setItems(items.filter((_, i) => i !== index));
         }
     };
 
-    // Calculations
     const calculateTotals = () => {
         let subtotal = 0;
         let totalTax = 0;
@@ -155,40 +167,8 @@ const CreateQuote = () => {
         if (discountType === 'PERCENT') {
             discountAmount = subtotal * (discountValue / 100);
         } else {
-            discountAmount = discountValue;
+            discountAmount = parseFloat(discountValue) || 0;
         }
-
-        // Logic: Is discount applied before tax or after?
-        // Commercially, discount usually reduces taxable value. 
-        // BUT for simplicity here, I created a flow where tax is calculated per line.
-        // If I apply a global discount, it gets complex to distribute it per line for correct tax calculation.
-        // OPTION: Apply discount on Subtotal (Pre-tax) -> Recalculate Tax?
-        // Let's do: Taxable = Subtotal - Discount. Then Tax is calculated on Taxable.
-        // But items have different tax rates! 
-        // CORRECT APPROACH: Distribute discount to lines. OR make Discount post-tax (invoice discount).
-        // Let's assume Invoice Discount is applied on the Total (Pre-tax) but we need to reduce tax proportionally.
-        // SIMPLER APPROACH: Just show totals. 
-        // Let's do: Subtotal (Sum of Line Totals) -> Less Discount -> Taxable Amount -> Add Tax (weighted average? No).
-        // Let's stick to Line Item Logic only? No, user requested "apply taxes or discounts". 
-        // Let's support Line Item Tax. And Global Discount that reduces the Final Grand Total (like a cash discount).
-        // Or Global Discount that reduces Taxable Value proportionally.
-
-        // DECISION: Global Discount reduces the Total (Tax Inclusive) or (Tax Exclusive).
-        // Let's go with: Subtotal - Discount = Net Taxable. But we have different tax rates.
-        // To be precise: If different tax rates exist, we can't easily apply a global discount pre-tax without splitting it.
-        // So, let's keep it simple: Discount is applied to the Grand Total for now? 
-        // No, that messes up GST.
-        // Let's apply Discount on Subtotal. And assume proportional reduction in Tax.
-        // For now, I will just display:
-        // Subtotal: X
-        // Discount: Y
-        // Tax: Z (calculated on line items) - THIS IS WRONG if discount reduces taxable.
-
-        // ALTERNATIVE: Don't implement Global Discount in UI yet if too complex for this turn.
-        // User asked "apply taxes or discounts". 
-        // Let's implement Discount as a line item reduction? No, Global is requested.
-        // Let's implementing Discount as a post-tax adjustment is easiest but legally gray.
-        // Let's just calculate: Grand Total = (Subtotal + Tax) - Discount.
 
         const grandTotal = subtotal + totalTax - discountAmount;
 
@@ -199,22 +179,26 @@ const CreateQuote = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // If client ID is null but name exists, try to create or find? 
+        // For now assumes manual client name is fine.
         let finalClientId = clientId;
-        if (!finalClientId && clientName) {
-            // Logic to create client...
-            const res = await fetch('http://localhost:3000/api/clients', {
-                method: 'POST', body: JSON.stringify({ name: clientName }), headers: { 'Content-Type': 'application/json' }
-            });
-            if (res.ok) { let d = await res.json(); finalClientId = d.id; }
-        }
+
+        // Backend logic handles creating client if needed usually, but here we just pass ID or name?
+        // Let's assume user selected or typed. 
+        if (!clientName) return alert("Client name required");
 
         const payload = {
             client_id: finalClientId,
             client_name: clientName,
+            client_address: clientAddress,
+            client_gstin: clientGstin,
             date,
-            status, // Saved status
+            status,
             discount_type: discountType,
             discount_value: parseFloat(discountValue),
+            notes,
+            terms,
             items: items.map(i => ({
                 ...i,
                 rate: parseFloat(i.rate),
@@ -226,138 +210,242 @@ const CreateQuote = () => {
         const url = id ? `http://localhost:3000/api/quotations/${id}` : 'http://localhost:3000/api/quotations';
         const method = id ? 'PUT' : 'POST';
 
-        await fetch(url, { method, body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
-        navigate('/quotations');
+        try {
+            const res = await fetch(url, { method, body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
+            if (res.ok) {
+                navigate('/quotations');
+            } else {
+                alert("Failed to save");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Error saving");
+        }
     };
 
-    if (loading) return <div className="p-8">Loading...</div>;
+    if (loading) return <div>Loading...</div>;
 
     return (
         <div className="max-w-6xl mx-auto">
+            {/* Company Header for Create View */}
+            <div className="card mb-6" style={{ border: '1px solid #ddd', padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid var(--primary-color)', paddingBottom: '20px' }}>
+                    <div>
+                        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>ELIZA INFOTECH</h1>
+                        <p style={{ margin: '5px 0', fontSize: '0.9rem', fontWeight: 500 }}>29/20, 8 MARLA, PANIPAT - 132103</p>
+                        <p style={{ margin: '0', fontSize: '0.8rem' }}><strong>GSTIN:</strong> 06HHQPS1919L1ZJ</p>
+                        <p style={{ margin: '5px 0 0 0', fontSize: '0.8rem' }}>
+                            <span style={{ marginRight: '10px' }}>📞 +91 893082398</span>
+                            <span>🌐 elizainfotech.com</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <div className="flex-between mb-6">
                 <div className="flex items-center gap-4">
                     <button onClick={() => navigate(-1)} className="btn btn-secondary p-2"><ArrowLeft size={20} /></button>
-                    <h2>{id ? 'Edit Quotation' : 'Create New Quotation'}</h2>
+                    <h1 className="text-2xl font-bold">{id ? 'Edit Quotation' : 'New Quotation'}</h1>
                 </div>
-                <div className="flex gap-2">
-                    <select className="input" value={status} onChange={e => setStatus(e.target.value)} style={{ width: '150px' }}>
+                <div className="flex gap-4">
+                    <input type="date" className="input" value={date} onChange={e => setDate(e.target.value)} />
+                    <select className="input" value={status} onChange={e => setStatus(e.target.value)}>
                         <option value="DRAFT">Draft</option>
                         <option value="SENT">Sent</option>
-                        <option value="INVOICED">Invoiced</option>
+                        <option value="ACCEPTED">Accepted</option>
+                        <option value="REJECTED">Rejected</option>
                     </select>
-                    <button className="btn btn-primary" onClick={handleSubmit}><Save size={16} /> Save</button>
                 </div>
             </div>
 
-            <div className="card mb-6 grid grid-cols-2 gap-6" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                <div>
-                    <Autocomplete
-                        label="Client Name"
-                        placeholder="Search Client..."
-                        value={clientName}
-                        onChange={setClientName}
-                        onSelect={handleClientSelect}
-                        fetchSuggestions={fetchClients}
-                    />
-                </div>
-                <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Date</label>
-                    <input type="date" className="input" value={date} onChange={(e) => setDate(e.target.value)} />
-                </div>
-            </div>
-
-            <div className="card">
-                <div className="table-container" style={{ overflow: 'visible' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '40px 3fr 1fr 1fr 1fr 1fr 1fr 40px', gap: '10px', fontWeight: 600, paddingBottom: '10px', borderBottom: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-                        <span>#</span>
-                        <span>Item Details</span>
-                        <span>HSN</span>
-                        <span>Rate</span>
-                        <span>Tax %</span>
-                        <span>Qty</span>
-                        <span>Total</span>
-                        <span></span>
+            <form onSubmit={handleSubmit}>
+                {/* Client Section */}
+                <div className="card mb-6 grid grid-cols-2 gap-6 mobile-stack">
+                    <div>
+                        <Autocomplete
+                            label="Client Name"
+                            value={clientName}
+                            onChange={setClientName}
+                            onSelect={handleClientSelect}
+                            fetchSuggestions={fetchClients}
+                            placeholder="Enter Client Name"
+                        />
+                        <textarea
+                            className="input mt-2"
+                            placeholder="Address"
+                            rows="3"
+                            value={clientAddress}
+                            onChange={e => setClientAddress(e.target.value)}
+                        ></textarea>
+                        <input
+                            className="input mt-2"
+                            placeholder="GSTIN"
+                            value={clientGstin}
+                            onChange={e => setClientGstin(e.target.value)}
+                        />
                     </div>
+                </div>
 
-                    <div className="flex flex-col gap-4 mt-4">
-                        {items.map((item, index) => (
-                            <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '40px 3fr 1fr 1fr 1fr 1fr 1fr 40px', gap: '10px', alignItems: 'start' }}>
-                                <span style={{ paddingTop: '8px' }}>{index + 1}</span>
+                {/* Items Section */}
+                <div className="card">
+                    <div className="table-container" style={{ overflow: 'visible' }}>
+                        <div className="item-row-header" style={{ display: 'grid', gridTemplateColumns: '40px 3fr 1fr 1fr 1fr 1fr 1fr 40px', gap: '10px', fontWeight: 600, paddingBottom: '10px', borderBottom: '1px solid var(--border)', color: 'var(--text-secondary)', minWidth: '800px' }}>
+                            <span>#</span>
+                            <span>Item Details</span>
+                            <span>HSN</span>
+                            <span>Rate</span>
+                            <span>Tax %</span>
+                            <span>Qty</span>
+                            <span>Total</span>
+                            <span></span>
+                        </div>
 
-                                {/* Item Details */}
-                                <div>
-                                    <Autocomplete
-                                        placeholder="Search Item..."
-                                        value={item.name}
-                                        onChange={(val) => updateItemRow(index, 'name', val)}
-                                        onSelect={(selected) => handleItemSelect(index, selected)}
-                                        fetchSuggestions={fetchItems}
-                                    />
-                                    <div className="mt-2 grid grid-cols-2 gap-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
-                                        <input placeholder="Model" className="input text-sm" value={item.model_number} onChange={e => updateItemRow(index, 'model_number', e.target.value)} />
-                                        <input placeholder="Description" className="input text-sm" value={item.description} onChange={e => updateItemRow(index, 'description', e.target.value)} />
+                        <div className="flex flex-col gap-4 mt-4">
+                            {items.map((item, index) => (
+                                <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '40px 3fr 1fr 1fr 1fr 1fr 1fr 40px', gap: '10px', alignItems: 'start', minWidth: '800px' }}>
+                                    <span style={{ paddingTop: '8px' }}>{index + 1}</span>
+
+                                    {/* Item Details */}
+                                    <div>
+                                        <Autocomplete
+                                            placeholder="Search Item..."
+                                            value={item.name}
+                                            onChange={(val) => updateItemRow(index, 'name', val)}
+                                            onSelect={(selected) => handleItemSelect(index, selected)}
+                                            fetchSuggestions={fetchItems}
+                                        />
+                                        <div className="mt-2 grid grid-cols-2 gap-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
+                                            <input placeholder="Model" className="input text-sm" value={item.model_number} onChange={e => updateItemRow(index, 'model_number', e.target.value)} />
+                                            <input placeholder="Description" className="input text-sm" value={item.description} onChange={e => updateItemRow(index, 'description', e.target.value)} />
+                                        </div>
                                     </div>
+
+                                    {/* HSN */}
+                                    <input className="input" value={item.hsn_code} onChange={e => updateItemRow(index, 'hsn_code', e.target.value)} placeholder="HSN" />
+
+                                    {/* Rate */}
+                                    <input type="number" className="input" value={item.rate} onChange={e => updateItemRow(index, 'rate', e.target.value)} />
+
+                                    {/* Tax */}
+                                    <input type="number" className="input" value={item.tax_rate} onChange={e => updateItemRow(index, 'tax_rate', e.target.value)} />
+
+                                    {/* Qty */}
+                                    <input type="number" className="input" value={item.quantity} onChange={e => updateItemRow(index, 'quantity', e.target.value)} />
+
+                                    {/* Total */}
+                                    <div className="font-bold py-2 text-right">
+                                        ₹{((item.rate * item.quantity)).toFixed(2)}
+                                    </div>
+
+                                    <button type="button" onClick={() => removeItemRow(index)} className="text-red-500 hover:text-red-700 py-2">
+                                        <Trash2 size={18} />
+                                    </button>
                                 </div>
+                            ))}
+                        </div>
 
-                                {/* HSN */}
-                                <input className="input" value={item.hsn_code} onChange={e => updateItemRow(index, 'hsn_code', e.target.value)} placeholder="HSN" />
+                        <button type="button" onClick={addItemRow} className="btn btn-secondary mt-4 w-full dashed-border">
+                            <Plus size={16} /> Add Item
+                        </button>
+                    </div>
 
-                                {/* Rate */}
-                                <input type="number" className="input" value={item.rate} onChange={e => updateItemRow(index, 'rate', e.target.value)} />
-
-                                {/* Tax */}
-                                <select className="input" value={item.tax_rate} onChange={e => updateItemRow(index, 'tax_rate', e.target.value)}>
-                                    <option value="0">0%</option>
-                                    <option value="5">5%</option>
-                                    <option value="12">12%</option>
-                                    <option value="18">18%</option>
-                                    <option value="28">28%</option>
-                                </select>
-
-                                {/* Qty */}
-                                <input type="number" className="input" value={item.quantity} onChange={e => updateItemRow(index, 'quantity', e.target.value)} />
-
-                                {/* Total */}
-                                <div style={{ paddingTop: '8px', fontWeight: 600 }}>
-                                    {(item.rate * item.quantity).toFixed(2)}
-                                </div>
-
-                                <button className="btn btn-danger p-2" onClick={() => removeItemRow(index)}><Trash2 size={16} /></button>
+                    {/* Totals Section */}
+                    <div className="flex justify-end mt-4">
+                        <div className="w-64">
+                            <div className="flex-between mb-2">
+                                <span>Subtotal</span>
+                                <span>₹{subtotal.toFixed(2)}</span>
                             </div>
-                        ))}
+                            <div className="flex-between mb-2">
+                                <span>Total Tax</span>
+                                <span>₹{totalTax.toFixed(2)}</span>
+                            </div>
+
+                            <div className="flex-between mb-2 items-center">
+                                <span>Discount</span>
+                                <div className="flex gap-1" style={{ width: '60%' }}>
+                                    <select
+                                        className="input py-1 px-2 text-sm"
+                                        style={{ width: '40%' }}
+                                        value={discountType}
+                                        onChange={(e) => setDiscountType(e.target.value)}
+                                    >
+                                        <option value="PERCENT">%</option>
+                                        <option value="FIXED">₹</option>
+                                    </select>
+                                    <input
+                                        type="number"
+                                        className="input py-1 px-2 text-sm"
+                                        style={{ width: '60%' }}
+                                        value={discountValue}
+                                        onChange={(e) => setDiscountValue(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex-between pt-2 border-t font-bold text-lg">
+                                <span>Grand Total</span>
+                                <span>₹{grandTotal.toFixed(2)}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <button className="btn btn-secondary w-full mt-4" onClick={addItemRow}><Plus size={16} /> Add Line Item</button>
-
-                {/* Totals Section */}
-                <div className="mt-8 flex justify-end" style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <div style={{ width: '300px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <div className="flex-between">
-                            <span>Subtotal</span>
-                            <span>₹{subtotal.toFixed(2)}</span>
-                        </div>
-                        <div className="flex-between">
-                            <span>Tax Total</span>
-                            <span>₹{totalTax.toFixed(2)}</span>
-                        </div>
-                        <div className="flex-between" style={{ alignItems: 'center' }}>
-                            <span>Discount</span>
-                            <div style={{ display: 'flex', gap: '5px' }}>
-                                <select className="input p-1 text-sm" value={discountType} onChange={e => setDiscountType(e.target.value)} style={{ width: '70px' }}>
-                                    <option value="PERCENT">%</option>
-                                    <option value="FIXED">₹</option>
-                                </select>
-                                <input className="input p-1 text-sm" type="number" value={discountValue} onChange={e => setDiscountValue(e.target.value)} style={{ width: '80px' }} />
+                {/* Notes & Terms Section with Bank Details Preview */}
+                <div className="grid grid-cols-2 gap-6 mt-6 mb-6 mobile-stack">
+                    <div className="card">
+                        <h3 className="font-semibold mb-2">Bank Details (Preview)</h3>
+                        <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded border leading-tight">
+                            <div className="grid grid-cols-[80px_1fr] gap-1">
+                                <span className="text-gray-500">Bank:</span>
+                                <span className="font-medium">Central Bank of India</span>
+                                <span className="text-gray-500">A/C Name:</span>
+                                <span className="font-medium">Eliza Infotech</span>
+                                <span className="text-gray-500">A/C No:</span>
+                                <span className="font-medium">5213284825</span>
+                                <span className="text-gray-500">IFSC:</span>
+                                <span className="font-medium">CBIN0283246</span>
+                                <span className="text-gray-500">Branch:</span>
+                                <span>Model Town, Panipat</span>
+                                <span className="text-gray-500 mt-1">UPI:</span>
+                                <span className="font-bold mt-1">8930082398</span>
                             </div>
                         </div>
-                        <div className="flex-between" style={{ borderTop: '2px solid var(--border)', paddingTop: '10px', marginTop: '5px', fontWeight: 700, fontSize: '1.2rem' }}>
-                            <span>Grand Total</span>
-                            <span>₹{grandTotal.toFixed(2)}</span>
-                        </div>
+
+                        <h3 className="font-semibold mt-4 mb-2">Notes</h3>
+                        <textarea
+                            className="input h-24"
+                            placeholder="Add additional notes here..."
+                            value={notes}
+                            onChange={e => setNotes(e.target.value)}
+                        ></textarea>
+                    </div>
+
+                    <div className="card">
+                        <h3 className="font-semibold mb-2">Terms & Conditions</h3>
+                        <textarea
+                            className="input h-64"
+                            placeholder="Enter terms and conditions..."
+                            value={terms}
+                            onChange={e => setTerms(e.target.value)}
+                        ></textarea>
                     </div>
                 </div>
-            </div>
+
+                {/* Footer Services */}
+                <div className="card mt-6 text-center text-xs text-gray-500 mb-20">
+                    <p className="font-bold mb-1">CONTACT FOR:</p>
+                    <p>
+                        CCTV CAMERAS • INTERNET NETWORKING EQUIPMENT • FTTH AND RADIO FREQUENCY NETWORKING DEVICES<br />
+                        INTERNET MARKETING • WEB & APP DEVELOPMENT • SOCIAL MEDIA MANAGEMENT • SEO AND MORE
+                    </p>
+                </div>
+
+                <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t flex justify-end gap-2 shadow-lg" style={{ zIndex: 100 }}>
+                    <button type="button" onClick={() => navigate('/quotations')} className="btn btn-secondary">Cancel</button>
+                    <button type="submit" className="btn btn-primary">Save Quotation</button>
+                </div>
+            </form>
         </div>
     );
 };

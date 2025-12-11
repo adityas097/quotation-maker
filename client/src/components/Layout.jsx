@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, FileText, PlusCircle, Book } from 'lucide-react';
+import { LayoutDashboard, Package, FileText, PlusCircle, Book, Users } from 'lucide-react';
+import { Outlet } from 'react-router-dom';
 
 const Layout = ({ children }) => {
     const location = useLocation();
@@ -9,7 +10,8 @@ const Layout = ({ children }) => {
         { label: 'Dashboard', path: '/', icon: LayoutDashboard },
         { label: 'Quotations', path: '/quotations', icon: FileText },
         { label: 'Invoices', path: '/billbook', icon: Book },
-        { label: 'Item Master', path: '/items', icon: Package },
+        { label: 'Items', path: '/items', icon: Package },
+        { label: 'Clients', path: '/clients', icon: Users },
     ];
 
     return (
@@ -18,7 +20,7 @@ const Layout = ({ children }) => {
                 <div className="navbar-content">
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         <Link to="/" className="logo">
-                            QuoteMaker
+                            Eliza Infotech Billbook
                         </Link>
                         <nav className="nav-links">
                             {navItems.map((item) => {
@@ -47,7 +49,7 @@ const Layout = ({ children }) => {
             </header>
 
             <main className="main-content">
-                {children}
+                <Outlet />
             </main>
         </div>
     );
