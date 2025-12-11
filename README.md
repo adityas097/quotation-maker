@@ -25,23 +25,36 @@ QuoteMaker is a streamlined web-based tool for businesses to create professional
 
 ### Installation
 
-1. **Clone or Download** the repository.
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/adityas097/quotation-maker.git
+   cd quotation-maker
+   ```
 
-2. **Setup Backend**:
+2. **Quick Start (Windows)**:
+   We have provided a script to start both servers.
+   ```bash
+   # Coming soon - manually run steps below for now
+   ```
+
+3. **Manual Setup**:
+   
+   **Terminal 1 (Backend)**:
    ```bash
    cd server
    npm install
    node src/index.js
    ```
-   *The server runs on http://localhost:3000*
-
-3. **Setup Frontend**:
+   
+   **Terminal 2 (Frontend)**:
    ```bash
    cd client
    npm install
    npm run dev
    ```
-   *The application runs on http://localhost:5173*
+
+4. **Access the App**:
+   Open browser at [http://localhost:5173](http://localhost:5173)
 
 ## Usage
 
