@@ -8,6 +8,7 @@ import ClientMaster from './pages/ClientMaster';
 import CreateQuote from './pages/CreateQuote';
 import QuotationView from './pages/QuotationView';
 import Billbook from './pages/Billbook';
+import CompanySettings from './pages/CompanySettings';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="/quotations/:id/edit" element={<CreateQuote />} />
           <Route path="/quotations/:id" element={<QuotationView />} />
           <Route path="/billbook" element={<Billbook />} />
+          <Route path="/settings" element={<CompanySettings />} />
         </Route>
       </Routes>
     </Router>

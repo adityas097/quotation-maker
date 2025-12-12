@@ -5,6 +5,7 @@ import { Printer, ArrowLeft, FileCheck } from 'lucide-react';
 const QuotationView = () => {
     const { id } = useParams();
     const [quote, setQuote] = useState(null);
+    const [company, setCompany] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -16,6 +17,13 @@ const QuotationView = () => {
             const res = await fetch(`http://localhost:3000/api/quotations/${id}`);
             const data = await res.json();
             setQuote(data);
+            if (data.company_snapshot) {
+                try {
+                    setCompany(typeof data.company_snapshot === 'string'
+                        ? JSON.parse(data.company_snapshot)
+                        : data.company_snapshot);
+                } catch (e) { console.error(e); }
+            }
         } catch (err) {
             console.error(err);
         } finally {
@@ -108,15 +116,32 @@ const QuotationView = () => {
                 {/* Header: Company Details (From) - First Page Flow */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid var(--primary-color)', paddingBottom: '20px', marginBottom: '20px' }}>
                     <div>
-                        <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>ELIZA INFOTECH</h1>
-                        <p style={{ margin: '5px 0', fontSize: '1rem', fontWeight: 500 }}>29/20, 8 MARLA, PANIPAT - 132103</p>
-                        <p style={{ margin: '0', fontSize: '0.9rem' }}><strong>GSTIN:</strong> 06HHQPS1919L1ZJ</p>
-                        <p style={{ margin: '5px 0 0 0', fontSize: '0.9rem' }}>
-                            <span style={{ marginRight: '15px' }}>📞 +91 893082398</span>
-                            <span style={{ marginRight: '15px' }}>🌐 elizainfotech.com</span>
-                            <br />
-                            <span>📧 infotecheliza@gmail.com</span>
-                        </p>
+                        {company ? (
+                            <>
+                                <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>{company.name}</h1>
+                                <p style={{ margin: '5px 0', fontSize: '1rem', fontWeight: 500 }}>{company.address}</p>
+                                <div style={{ display: 'flex', gap: '15px', fontSize: '0.9rem', marginTop: '5px' }}>
+                                    {company.gstin && <span><strong>GSTIN:</strong> {company.gstin}</span>}
+                                    {company.pan && <span><strong>PAN:</strong> {company.pan}</span>}
+                                </div>
+                                <p style={{ margin: '10px 0 0 0', fontSize: '0.9rem' }}>
+                                    {company.phone && <span style={{ marginRight: '15px' }}>📞 {company.phone}</span>}
+                                    {company.email && <span>📧 {company.email}</span>}
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>ELIZA INFOTECH</h1>
+                                <p style={{ margin: '5px 0', fontSize: '1rem', fontWeight: 500 }}>29/20, 8 MARLA, PANIPAT - 132103</p>
+                                <p style={{ margin: '0', fontSize: '0.9rem' }}><strong>GSTIN:</strong> 06HHQPS1919L1ZJ</p>
+                                <p style={{ margin: '5px 0 0 0', fontSize: '0.9rem' }}>
+                                    <span style={{ marginRight: '15px' }}>📞 +91 893082398</span>
+                                    <span style={{ marginRight: '15px' }}>🌐 elizainfotech.com</span>
+                                    <br />
+                                    <span>📧 infotecheliza@gmail.com</span>
+                                </p>
+                            </>
+                        )}
                     </div>
                     <div style={{ textAlign: 'right' }}>
                         <h2 style={{ fontSize: '1.5rem', color: '#555', marginTop: '0' }}>{isInvoice ? 'TAX INVOICE' : 'QUOTATION'}</h2>
@@ -191,28 +216,32 @@ const QuotationView = () => {
                                 <tbody>
                                     <tr>
                                         <td style={{ color: '#666', width: '70px', padding: '1px' }}>Bank:</td>
-                                        <td style={{ padding: '1px' }}><strong>Central Bank of India</strong></td>
+                                        <td style={{ padding: '1px' }}><strong>{company ? company.bank_name : 'Central Bank of India'}</strong></td>
                                     </tr>
                                     <tr>
                                         <td style={{ color: '#666', padding: '1px' }}>A/C Name:</td>
-                                        <td style={{ padding: '1px' }}><strong>Eliza Infotech</strong></td>
+                                        <td style={{ padding: '1px' }}><strong>{company ? (company.account_holder_name || company.name) : 'Eliza Infotech'}</strong></td>
                                     </tr>
                                     <tr>
                                         <td style={{ color: '#666', padding: '1px' }}>A/C No:</td>
-                                        <td style={{ padding: '1px' }}><strong>5213284825</strong></td>
+                                        <td style={{ padding: '1px' }}><strong>{company ? company.account_no : '5213284825'}</strong></td>
                                     </tr>
                                     <tr>
                                         <td style={{ color: '#666', padding: '1px' }}>IFSC:</td>
-                                        <td style={{ padding: '1px' }}><strong>CBIN0283246</strong></td>
+                                        <td style={{ padding: '1px' }}><strong>{company ? company.ifsc : 'CBIN0283246'}</strong></td>
                                     </tr>
-                                    <tr>
-                                        <td style={{ color: '#666', padding: '1px' }}>Branch:</td>
-                                        <td style={{ padding: '1px' }}>Model Town, Panipat</td>
-                                    </tr>
-                                    <tr>
-                                        <td style={{ color: '#666', padding: '1px' }}>UPI:</td>
-                                        <td style={{ padding: '1px' }}><strong>8930082398</strong></td>
-                                    </tr>
+                                    {company && company.upi_id && (
+                                        <tr>
+                                            <td style={{ color: '#666', padding: '1px' }}>UPI:</td>
+                                            <td style={{ padding: '1px' }}><strong>{company.upi_id}</strong></td>
+                                        </tr>
+                                    )}
+                                    {!company && (
+                                        <tr>
+                                            <td style={{ color: '#666', padding: '1px' }}>UPI:</td>
+                                            <td style={{ padding: '1px' }}><strong>8930082398</strong></td>
+                                        </tr>
+                                    )}
                                 </tbody>
                             </table>
                         </div>

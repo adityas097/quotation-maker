@@ -15,6 +15,10 @@ const CreateQuote = () => {
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [status, setStatus] = useState('DRAFT');
 
+    // Company State
+    const [companies, setCompanies] = useState([]);
+    const [selectedCompany, setSelectedCompany] = useState(null);
+
     // Items State
     const [items, setItems] = useState([
         {
@@ -39,12 +43,29 @@ const CreateQuote = () => {
     const [terms, setTerms] = useState(''); // New
 
     useEffect(() => {
+        fetchCompanies();
         if (id) fetchQuoteData();
         if (!id) {
             // Default Terms 
             setTerms("1. Goods once sold will not be taken back.\n2. Interest @ 18% p.a. will be charged if payment is not made within the due date.\n3. Subject to Panipat Jurisdiction only.");
         }
     }, [id]);
+
+    const fetchCompanies = async () => {
+        try {
+            const res = await fetch('/api/companies');
+            const data = await res.json();
+            setCompanies(data);
+
+            // If creating new quote, set default company
+            if (!id && data.length > 0) {
+                const defaultCo = data.find(c => c.is_default) || data[0];
+                setSelectedCompany(defaultCo);
+            }
+        } catch (error) {
+            console.error("Error fetching companies:", error);
+        }
+    };
 
     const fetchQuoteData = async () => {
         try {
@@ -60,8 +81,17 @@ const CreateQuote = () => {
                 setStatus(data.status || 'DRAFT');
                 setDiscountType(data.discount_type || 'PERCENT');
                 setDiscountValue(data.discount_value || 0);
+                setDiscountValue(data.discount_value || 0);
                 setNotes(data.notes || '');
                 setTerms(data.terms || '');
+
+                if (data.company_snapshot) {
+                    try {
+                        setSelectedCompany(typeof data.company_snapshot === 'string' ? JSON.parse(data.company_snapshot) : data.company_snapshot);
+                    } catch (e) {
+                        console.error("Error parsing company snapshot", e);
+                    }
+                }
 
                 const mappedItems = data.items.map(i => ({
                     id: i.id || Date.now() + Math.random(),
@@ -230,14 +260,42 @@ const CreateQuote = () => {
             {/* Company Header for Create View */}
             <div className="card mb-6" style={{ border: '1px solid #ddd', padding: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid var(--primary-color)', paddingBottom: '20px' }}>
-                    <div>
-                        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>ELIZA INFOTECH</h1>
-                        <p style={{ margin: '5px 0', fontSize: '0.9rem', fontWeight: 500 }}>29/20, 8 MARLA, PANIPAT - 132103</p>
-                        <p style={{ margin: '0', fontSize: '0.8rem' }}><strong>GSTIN:</strong> 06HHQPS1919L1ZJ</p>
-                        <p style={{ margin: '5px 0 0 0', fontSize: '0.8rem' }}>
-                            <span style={{ marginRight: '10px' }}>📞 +91 893082398</span>
-                            <span>🌐 elizainfotech.com</span>
-                        </p>
+                    <div className="w-full">
+                        <div className="flex justify-between items-start mb-4">
+                            {/* Company Select Dropdown */}
+                            <div className="mb-2">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">From Company</label>
+                                <select
+                                    className="border border-gray-300 rounded p-1 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                    value={selectedCompany?.id || ''}
+                                    onChange={(e) => {
+                                        const co = companies.find(c => c.id === parseInt(e.target.value));
+                                        if (co) setSelectedCompany(co);
+                                    }}
+                                >
+                                    {companies.map(c => (
+                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {selectedCompany ? (
+                            <>
+                                <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>{selectedCompany.name}</h1>
+                                <p style={{ margin: '5px 0', fontSize: '0.9rem', fontWeight: 500 }}>{selectedCompany.address}</p>
+                                <div className="flex gap-4 text-sm mt-2">
+                                    {selectedCompany.gstin && <p><strong>GSTIN:</strong> {selectedCompany.gstin}</p>}
+                                    {selectedCompany.pan && <p><strong>PAN:</strong> {selectedCompany.pan}</p>}
+                                </div>
+                                <p style={{ margin: '5px 0 0 0', fontSize: '0.8rem' }}>
+                                    {selectedCompany.phone && <span style={{ marginRight: '10px' }}>📞 {selectedCompany.phone}</span>}
+                                    {selectedCompany.email && <span>✉️ {selectedCompany.email}</span>}
+                                </p>
+                            </>
+                        ) : (
+                            <p className="text-red-500">Please create a company profile in Settings</p>
+                        )}
                     </div>
                 </div>
             </div>
@@ -396,20 +454,26 @@ const CreateQuote = () => {
                     <div className="card">
                         <h3 className="font-semibold mb-2">Bank Details (Preview)</h3>
                         <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded border leading-tight">
-                            <div className="grid grid-cols-[80px_1fr] gap-1">
-                                <span className="text-gray-500">Bank:</span>
-                                <span className="font-medium">Central Bank of India</span>
-                                <span className="text-gray-500">A/C Name:</span>
-                                <span className="font-medium">Eliza Infotech</span>
-                                <span className="text-gray-500">A/C No:</span>
-                                <span className="font-medium">5213284825</span>
-                                <span className="text-gray-500">IFSC:</span>
-                                <span className="font-medium">CBIN0283246</span>
-                                <span className="text-gray-500">Branch:</span>
-                                <span>Model Town, Panipat</span>
-                                <span className="text-gray-500 mt-1">UPI:</span>
-                                <span className="font-bold mt-1">8930082398</span>
-                            </div>
+                            {selectedCompany ? (
+                                <div className="grid grid-cols-[80px_1fr] gap-1">
+                                    <span className="text-gray-500">Bank:</span>
+                                    <span className="font-medium">{selectedCompany.bank_name}</span>
+                                    <span className="text-gray-500">A/C Name:</span>
+                                    <span className="font-medium">{selectedCompany.account_holder_name}</span>
+                                    <span className="text-gray-500">A/C No:</span>
+                                    <span className="font-medium">{selectedCompany.account_no}</span>
+                                    <span className="text-gray-500">IFSC:</span>
+                                    <span className="font-medium">{selectedCompany.ifsc}</span>
+                                    {selectedCompany.upi_id && (
+                                        <>
+                                            <span className="text-gray-500 mt-1">UPI:</span>
+                                            <span className="font-bold mt-1">{selectedCompany.upi_id}</span>
+                                        </>
+                                    )}
+                                </div>
+                            ) : (
+                                <p>No Company Selected</p>
+                            )}
                         </div>
 
                         <h3 className="font-semibold mt-4 mb-2">Notes</h3>

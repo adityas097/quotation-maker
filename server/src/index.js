@@ -15,6 +15,7 @@ app.use('/api/items', require('./routes/items'));
 app.use('/api/clients', require('./routes/clients'));
 app.use('/api/quotations', require('./routes/quotations'));
 app.use('/api/invoices', require('./routes/invoices'));
+app.use('/api/companies', require('./routes/companies'));
 
 // Determine Environment (Production vs Dev)
 // In production (Hostinger), we serve the built frontend
@@ -30,6 +31,15 @@ if (process.env.NODE_ENV === 'production' || process.argv.includes('--serve-clie
         res.send('QuoteMaker API is running. In dev, run client separately.');
     });
 }
+
+// Fallback for any other request (if not handled above)
+app.use((req, res, next) => {
+    if (process.env.NODE_ENV === 'production' || process.argv.includes('--serve-client')) {
+        res.sendFile(path.join(__dirname, '../../client/dist', 'index.html'));
+    } else {
+        next();
+    }
+});
 
 initDB().then(() => {
     app.listen(PORT, () => {

@@ -72,7 +72,44 @@ async function initDB() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (quotation_id) REFERENCES quotations(id)
     );
+
+    CREATE TABLE IF NOT EXISTS companies (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      address TEXT,
+      phone TEXT,
+      email TEXT,
+      gstin TEXT,
+      pan TEXT,
+      bank_name TEXT,
+      account_no TEXT,
+      ifsc TEXT,
+      account_holder_name TEXT,
+      upi_id TEXT,
+      is_default BOOLEAN DEFAULT 0
+    );
   `);
+
+  // Seed default company if none exists
+  const companyCount = await db.get('SELECT COUNT(*) as count FROM companies');
+  if (companyCount.count === 0) {
+    await db.run(`
+      INSERT INTO companies (name, address, phone, email, gstin, pan, bank_name, account_no, ifsc, account_holder_name, is_default)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+    `, [
+      'ELIZA INFOTECH',
+      'Near SP Office, Narnaul, Haryana (123001)',
+      '+91 9728266497',
+      'elizainfotech.solutions@gmail.com',
+      '06HPSPK0735M1Z8',
+      'HPSPK0735M',
+      'Kotak Mahindra Bank',
+      '4046029995',
+      'KKBK0000293',
+      'Aditya Kaushik'
+    ]);
+    console.log('Seeded default company: ELIZA INFOTECH');
+  }
 
   console.log('Database initialized');
   return db;
