@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Printer, ArrowLeft, FileCheck } from 'lucide-react';
+import { API_BASE_URL } from '../apiConfig';
 
 const QuotationView = () => {
     const { id } = useParams();
@@ -14,7 +15,7 @@ const QuotationView = () => {
 
     const fetchQuote = async () => {
         try {
-            const res = await fetch(`http://localhost:3000/api/quotations/${id}`);
+            const res = await fetch(`${API_BASE_URL}/api/quotations/${id}`);
             const data = await res.json();
             setQuote(data);
             if (data.company_snapshot) {
@@ -34,7 +35,7 @@ const QuotationView = () => {
     const handleConvertToInvoice = async () => {
         if (!window.confirm("Convert this quotation to an invoice?")) return;
         try {
-            const res = await fetch(`http://localhost:3000/api/invoices/convert/${id}`, { method: 'POST' });
+            const res = await fetch(`${API_BASE_URL}/api/invoices/convert/${id}`, { method: 'POST' });
             if (res.ok) {
                 alert("Invoice created successfully!");
                 fetchQuote(); // Refresh to show updated status

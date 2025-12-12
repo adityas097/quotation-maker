@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, CheckCircle, Smartphone, Mail, MapPin, Building, CreditCard } from 'lucide-react';
 
+import { API_BASE_URL } from '../apiConfig';
+
 function CompanySettings() {
     const [companies, setCompanies] = useState([]);
     const [showModal, setShowModal] = useState(false);
@@ -27,7 +29,7 @@ function CompanySettings() {
 
     const fetchCompanies = async () => {
         try {
-            const response = await fetch('/api/companies');
+            const response = await fetch(`${API_BASE_URL}/api/companies`);
             const data = await response.json();
             setCompanies(data);
         } catch (error) {
@@ -39,8 +41,8 @@ function CompanySettings() {
         e.preventDefault();
         setLoading(true);
         const url = editingCompany
-            ? `/api/companies/${editingCompany.id}`
-            : '/api/companies';
+            ? `${API_BASE_URL}/api/companies/${editingCompany.id}`
+            : `${API_BASE_URL}/api/companies`;
         const method = editingCompany ? 'PUT' : 'POST';
 
         try {
@@ -79,7 +81,7 @@ function CompanySettings() {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this company?')) {
             try {
-                await fetch(`/api/companies/${id}`, { method: 'DELETE' });
+                await fetch(`${API_BASE_URL}/api/companies/${id}`, { method: 'DELETE' });
                 fetchCompanies();
             } catch (error) {
                 console.error('Error deleting company:', error);

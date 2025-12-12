@@ -96,6 +96,31 @@ If you made changes (like the new Company Settings feature) and pushed them to G
     pm2 restart quotemaker
     ```
 
-**Why Restart?**
--   The database tables (like `companies`) are created only when the server starts.
--   The new API routes (like `/api/companies`) are loaded only when the server starts.
+## 🚀 Quick Update Script (For your specific setup)
+
+Based on your server structure (`public_html/.builds/source/repository`), run this one-liner or these commands to update everything:
+
+```bash
+# 1. Go to your repository
+cd ~/public_html/.builds/source/repository
+
+# 2. Pull the new code
+git pull origin main
+
+# 3. Update Frontend (Build & Copy to public_html)
+cd client
+npm install
+npm run build
+# Copy the built files to your main website folder (public_html)
+# We go up 4 levels to reach public_html: client -> repository -> source -> .builds -> public_html
+cp -r dist/* ../../../../
+
+# 4. Update Backend (Database & API)
+cd ../server
+npm install
+pm2 restart quotemaker
+```
+
+**Verify:**
+1.  Check `http://n8n.elizainfotech.com` (Frontend should look new)
+2.  Check `http://n8n.elizainfotech.com/api/companies` (Should return JSON, not 404)

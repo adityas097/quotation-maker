@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
 import Autocomplete from '../components/Autocomplete';
+import { API_BASE_URL } from '../apiConfig';
 
 const CreateQuote = () => {
     const { id } = useParams();
@@ -53,7 +54,7 @@ const CreateQuote = () => {
 
     const fetchCompanies = async () => {
         try {
-            const res = await fetch('/api/companies');
+            const res = await fetch(`${API_BASE_URL}/api/companies`);
             const data = await res.json();
             setCompanies(data);
 
@@ -70,7 +71,7 @@ const CreateQuote = () => {
     const fetchQuoteData = async () => {
         try {
             setLoading(true);
-            const res = await fetch(`http://localhost:3000/api/quotations/${id}`);
+            const res = await fetch(`${API_BASE_URL}/api/quotations/${id}`);
             if (res.ok) {
                 const data = await res.json();
                 setClientName(data.client_name);
@@ -237,7 +238,7 @@ const CreateQuote = () => {
             }))
         };
 
-        const url = id ? `http://localhost:3000/api/quotations/${id}` : 'http://localhost:3000/api/quotations';
+        const url = id ? `${API_BASE_URL}/api/quotations/${id}` : `${API_BASE_URL}/api/quotations`;
         const method = id ? 'PUT' : 'POST';
 
         try {
