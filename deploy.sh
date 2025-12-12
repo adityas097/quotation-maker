@@ -6,6 +6,8 @@
 echo "🚀 Starting Deployment..."
 
 # 1. Pull latest code
+echo "🧹 Resetting local changes to avoid conflicts..."
+git reset --hard HEAD
 echo "📥 Pulling latest code from Git..."
 git pull origin main
 
