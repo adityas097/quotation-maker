@@ -50,29 +50,52 @@ Allows you to run the QuoteMaker app using **Node.js**.
     ```
 
 6.  **Access App**:
-    Open `http://<your-server-ip>:3000`
-    *Note: You may need to open port 3000 in Hostinger Firewall or use Nginx as a reverse proxy to point domain.com -> localhost:3000.*
+    Open `http://<your-server-ip>:3000` in your browser.
+    *(You may need to allow port 3000 in Hostinger firewall settings)*
 
-## Option B: Hostinger Shared Hosting (Setup Node.js App)
+---
 
-*Only applies if your plan supports "Setup Node.js App" in hPanel.*
+## Option B: Hostinger Shared Hosting (cPanel/hPanel)
 
-1.  **Upload Files**: Use File Manager to upload the `quotation-maker` folder to `public_html/quotemaker`.
-2.  **Go to hPanel -> Setup Node.js App**.
-3.  **Create App**:
-    -   **Node.js Version**: 18+
-    -   **App Root**: `public_html/quotemaker/server`
-    -   **Application URL**: `quotemaker` (e.g., domain.com/quotemaker)
-    -   **Application Startup File**: `src/index.js`
-4.  **Install Dependencies**: Click "NPM Install" button in hPanel.
-    *(Note: You might need to manually build the `client` folder locally and upload the `client/dist` folder to the server since shared hosting might not let you run `npm run build` easily via UI)*.
-    
-    *Recommended Workflow for Shared Hosting*:
-    1. Run `npm run build` on your local PC inside `client`.
-    2. Upload the `client/dist` folder to your server alongside `server`.
-    3. Ensure `server/src/index.js` path to `../../client/dist` is correct relative to where you put it.
+*Shared hosting is harder for Node.js apps. If you have "Node.js" selector in hPanel:*
 
-## Troubleshooting
+1.  **Upload Files**:
+    -   Upload `server` folder contents to root.
+    -   Upload `client/dist` folder contents to `public` (or combine them).
+2.  **Setup Node App**:
+    -   App Entry file: `src/index.js`
+    -   Run `npm install` from hPanel.
 
--   **Database**: The `database.sqlite` file will be created in `server` folder. Ensure permissions allow writing.
--   **Ports**: On shared hosting, the port is assigned automatically (Passenger). On VPS, you control port 3000.
+---
+
+## 🔄 How to Update the Live Site
+
+If you made changes (like the new Company Settings feature) and pushed them to GitHub, follow these steps on your server:
+
+1.  **Navigate to project folder**:
+    ```bash
+    cd quotation-maker
+    ```
+
+2.  **Pull Latest Code**:
+    ```bash
+    git pull
+    ```
+
+3.  **Rebuild Frontend** (Important for UI changes):
+    ```bash
+    cd client
+    npm install  # in case new dependencies were added
+    npm run build
+    ```
+
+4.  **Restart Backend** (Critical for Database/API changes):
+    ```bash
+    cd ../server
+    npm install  # in case new backend deps
+    pm2 restart quotemaker
+    ```
+
+**Why Restart?**
+-   The database tables (like `companies`) are created only when the server starts.
+-   The new API routes (like `/api/companies`) are loaded only when the server starts.
