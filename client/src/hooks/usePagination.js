@@ -7,13 +7,16 @@ const usePagination = (data = [], initialPageSize = 30) => {
     // Reset page if data length changes drastically or search filter changes
     // But for client side search, we usually pass filtered data.
 
-    const totalItems = data.length;
+    // Ensure data is always an array
+    const validData = Array.isArray(data) ? data : [];
+
+    const totalItems = validData.length;
     const totalPages = Math.ceil(totalItems / pageSize);
 
-    const currentData = useMemo(() => {
+    const currentItems = useMemo(() => {
         const start = (currentPage - 1) * pageSize;
-        return data.slice(start, start + pageSize);
-    }, [data, currentPage, pageSize]);
+        return validData.slice(start, start + pageSize);
+    }, [validData, currentPage, pageSize]);
 
     const goToPage = (page) => {
         const p = Math.max(1, Math.min(page, totalPages));
@@ -26,7 +29,7 @@ const usePagination = (data = [], initialPageSize = 30) => {
     };
 
     return {
-        currentData,
+        currentItems,
         currentPage,
         totalPages,
         pageSize,

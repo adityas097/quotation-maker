@@ -1,21 +1,43 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const { initDB } = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// Security Middleware
+app.use(helmet());
+app.use(cors({
+    origin: process.env.NODE_ENV === 'production' ? false : '*', // Strict CORS in production
+    credentials: true
+}));
+
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100 // limit each IP to 100 requests per windowMs
+});
+app.use('/api/', limiter);
+
 app.use(express.json());
 
 const path = require('path');
 
 // Routes
-app.use('/api/items', require('./routes/items'));
-app.use('/api/clients', require('./routes/clients'));
-app.use('/api/quotations', require('./routes/quotations'));
-app.use('/api/invoices', require('./routes/invoices'));
-app.use('/api/companies', require('./routes/companies'));
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/setup', require('./routes/setup'));
+
+const { authenticateToken } = require('./middleware/auth');
+
+// Protected Routes
+app.use('/api/users', authenticateToken, require('./routes/users')); // New Admin Route
+app.use('/api/items', authenticateToken, require('./routes/items'));
+app.use('/api/clients', authenticateToken, require('./routes/clients'));
+app.use('/api/quotations', authenticateToken, require('./routes/quotations'));
+app.use('/api/invoices', authenticateToken, require('./routes/invoices'));
+app.use('/api/companies', authenticateToken, require('./routes/companies'));
 
 // Determine Environment (Production vs Dev)
 // In production (Hostinger), we serve the built frontend

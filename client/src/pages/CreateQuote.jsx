@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
 import Autocomplete from '../components/Autocomplete';
 import { API_BASE_URL } from '../apiConfig';
+import { authFetch } from '../utils/authFetch';
 
 const CreateQuote = () => {
     const { id } = useParams();
@@ -54,7 +55,7 @@ const CreateQuote = () => {
 
     const fetchCompanies = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/api/companies`);
+            const res = await authFetch(`${API_BASE_URL}/api/companies`);
             const data = await res.json();
             setCompanies(data);
 
@@ -71,7 +72,7 @@ const CreateQuote = () => {
     const fetchQuoteData = async () => {
         try {
             setLoading(true);
-            const res = await fetch(`${API_BASE_URL}/api/quotations/${id}`);
+            const res = await authFetch(`${API_BASE_URL}/api/quotations/${id}`);
             if (res.ok) {
                 const data = await res.json();
                 setClientName(data.client_name);
@@ -81,7 +82,6 @@ const CreateQuote = () => {
                 setDate(data.date);
                 setStatus(data.status || 'DRAFT');
                 setDiscountType(data.discount_type || 'PERCENT');
-                setDiscountValue(data.discount_value || 0);
                 setDiscountValue(data.discount_value || 0);
                 setNotes(data.notes || '');
                 setTerms(data.terms || '');
@@ -117,12 +117,12 @@ const CreateQuote = () => {
     };
 
     const fetchClients = async (query) => {
-        const res = await fetch(`http://localhost:3000/api/clients/search?q=${query}`);
+        const res = await authFetch(`${API_BASE_URL}/api/clients/search?q=${query}`);
         return await res.json();
     };
 
     const fetchItems = async (query) => {
-        const res = await fetch('http://localhost:3000/api/items');
+        const res = await authFetch(`${API_BASE_URL}/api/items`);
         const allItems = await res.json();
         const q = query.toLowerCase();
         return allItems.filter(i =>
@@ -242,15 +242,16 @@ const CreateQuote = () => {
         const method = id ? 'PUT' : 'POST';
 
         try {
-            const res = await fetch(url, { method, body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
+            const res = await authFetch(url, { method, body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
             if (res.ok) {
                 navigate('/quotations');
             } else {
-                alert("Failed to save");
+                const data = await res.json();
+                alert(`Failed to save: ${data.error || 'Unknown error'}`);
             }
         } catch (err) {
             console.error(err);
-            alert("Error saving");
+            alert(`Error saving: ${err.message}`);
         }
     };
 

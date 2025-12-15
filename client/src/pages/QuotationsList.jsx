@@ -1,33 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { authFetch } from '../utils/authFetch';
+import { API_BASE_URL } from '../apiConfig';
 import usePagination from '../hooks/usePagination';
 import PaginationControls from '../components/PaginationControls';
 import { FileText, Eye, Trash2, Copy } from 'lucide-react';
 
 const QuotationsList = () => {
     const [quotes, setQuotes] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
+
+    const {
+        currentPage,
+        totalPages,
+        pageSize,
+        totalItems,
+        currentItems: currentQuotes,
+        goToPage,
+        changePageSize
+    } = usePagination(quotes);
 
     useEffect(() => {
         fetchQuotes();
     }, []);
 
-    const {
-        currentData: currentQuotes,
-        currentPage,
-        totalPages,
-        pageSize,
-        totalItems,
-        goToPage,
-        changePageSize
-    } = usePagination(quotes, 30);
-
     const fetchQuotes = async () => {
         try {
             setLoading(true);
-            const res = await fetch('http://localhost:3000/api/quotations');
+            const res = await authFetch(`${API_BASE_URL}/api/quotations`);
+            if (!res.ok) throw new Error("Failed to fetch quotes");
             const data = await res.json();
-            setQuotes(data);
+            setQuotes(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error(err);
         } finally {
@@ -38,8 +41,8 @@ const QuotationsList = () => {
     const handleDelete = async (id) => {
         if (!window.confirm('Are you sure you want to delete this quote?')) return;
         try {
-            await fetch(`http://localhost:3000/api/quotations/${id}`, { method: 'DELETE' });
-            fetchQuotes();
+            const res = await authFetch(`${API_BASE_URL}/api/quotations/${id}`, { method: 'DELETE' });
+            if (res.ok) fetchQuotes();
         } catch (err) {
             console.error(err);
         }
@@ -48,7 +51,7 @@ const QuotationsList = () => {
     const handleDuplicate = async (id) => {
         if (!window.confirm('Duplicate this quotation?')) return;
         try {
-            const res = await fetch(`http://localhost:3000/api/quotations/duplicate/${id}`, { method: 'POST' });
+            const res = await authFetch(`${API_BASE_URL}/api/quotations/duplicate/${id}`, { method: 'POST' });
             if (res.ok) {
                 const data = await res.json();
                 // Redirect to edit the new quote to satisfy "open duplicated quote"

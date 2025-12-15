@@ -2,31 +2,34 @@ import React, { useState, useEffect } from 'react';
 import usePagination from '../hooks/usePagination';
 import PaginationControls from '../components/PaginationControls';
 import { FileText, Printer, CheckCircle, Edit, Copy } from 'lucide-react';
+import { authFetch } from '../utils/authFetch';
+import { API_BASE_URL } from '../apiConfig';
 
 const Billbook = () => {
     const [invoices, setInvoices] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
+
+    const {
+        currentPage,
+        totalPages,
+        pageSize,
+        totalItems,
+        currentItems: currentInvoices,
+        goToPage,
+        changePageSize
+    } = usePagination(invoices);
 
     useEffect(() => {
         fetchInvoices();
     }, []);
 
-    const {
-        currentData: currentInvoices,
-        currentPage,
-        totalPages,
-        pageSize,
-        totalItems,
-        goToPage,
-        changePageSize
-    } = usePagination(invoices, 30);
-
     const fetchInvoices = async () => {
         try {
             setLoading(true);
-            const res = await fetch('http://localhost:3000/api/invoices');
+            const res = await authFetch(`${API_BASE_URL}/api/invoices`);
+            if (!res.ok) throw new Error("Failed to fetch invoices");
             const data = await res.json();
-            setInvoices(data);
+            setInvoices(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error(err);
         } finally {
@@ -34,26 +37,10 @@ const Billbook = () => {
         }
     };
 
-    const handlePrint = (id) => {
-        // For now, we can reuse QuotationView or a dedicated Invoice View route.
-        // Let's reuse QuotationView but maybe pass a mode? 
-        // Or simply route to /quotations/:quoteId because Invoice is just a status.
-        // BUT we have a separate invoices table.
-        // Let's assume for this MVP, printing an invoice redirects to the Quote View 
-        // which will detect it's invoiced and show Invoice #.
-        // Wait, invoice ID is different from Quote ID.
-        // Let's finding the related quote ID.
-        // Actually, the requirement said "convert them into invoices... and maintain a complete billbook history".
-        // If we want to print the *Invoice*, we should probably view the Quote that generated it, 
-        // with the Invoice metadata overlay.
-        alert("To print, open the original quotation. Improved Invoice View coming soon.");
-        alert("To print, open the original quotation. Improved Invoice View coming soon.");
-    };
-
     const handleDuplicateInvoice = async (quoteId) => {
         if (!window.confirm('Create a new Draft Quote from this Invoice?')) return;
         try {
-            const res = await fetch(`http://localhost:3000/api/quotations/duplicate/${quoteId}`, { method: 'POST' });
+            const res = await authFetch(`${API_BASE_URL}/api/quotations/duplicate/${quoteId}`, { method: 'POST' });
             if (res.ok) {
                 const data = await res.json();
                 // Redirect to edit the new quote

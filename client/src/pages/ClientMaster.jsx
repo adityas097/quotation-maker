@@ -1,5 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
+import { authFetch } from '../utils/authFetch';
+import { API_BASE_URL } from '../apiConfig';
 import { Plus, Edit, Trash2, Search, User, Phone, MapPin, FileText, Upload, Download } from 'lucide-react';
 import Modal from '../components/Modal';
 import ImportWizard from '../components/ImportWizard';
@@ -10,24 +11,37 @@ import * as XLSX from 'xlsx';
 const ClientMaster = () => {
     const [clients, setClients] = useState([]);
     const [filteredClients, setFilteredClients] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
-
-    // Selection & Bulk
-    const [selectedIds, setSelectedIds] = useState(new Set());
-    const [isImportWizardOpen, setIsImportWizardOpen] = useState(false);
-
-    // Modal & Form State
+    const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingClient, setEditingClient] = useState(null);
-    const [formData, setFormData] = useState({ name: '', email: '', phone: '', address: '', gstin: '' });
+    const [isImportWizardOpen, setIsImportWizardOpen] = useState(false);
+    const [selectedIds, setSelectedIds] = useState(new Set());
+
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+        gstin: ''
+    });
+
+    const {
+        currentPage,
+        totalPages,
+        pageSize,
+        totalItems,
+        currentItems: currentClients,
+        goToPage,
+        changePageSize
+    } = usePagination(filteredClients);
 
     const CLIENT_FIELDS = [
-        { key: 'name', label: 'Client Name', required: true },
-        { key: 'phone', label: 'Phone' },
-        { key: 'email', label: 'Email' },
-        { key: 'address', label: 'Address' },
-        { key: 'gstin', label: 'GSTIN' }
+        { label: 'Client Name', key: 'name', required: true },
+        { label: 'Email', key: 'email' },
+        { label: 'Phone', key: 'phone' },
+        { label: 'Address', key: 'address' },
+        { label: 'GSTIN', key: 'gstin' }
     ];
 
     useEffect(() => {
@@ -35,35 +49,25 @@ const ClientMaster = () => {
     }, []);
 
     useEffect(() => {
-        if (!search) {
-            setFilteredClients(clients);
-        } else {
-            const q = search.toLowerCase();
-            setFilteredClients(clients.filter(c =>
-                c.name.toLowerCase().includes(q) ||
-                (c.phone && c.phone.includes(q)) ||
-                (c.gstin && c.gstin.toLowerCase().includes(q))
-            ));
-        }
+        const lowerSearch = search.toLowerCase();
+        const filtered = clients.filter(c =>
+            c.name.toLowerCase().includes(lowerSearch) ||
+            (c.email && c.email.toLowerCase().includes(lowerSearch)) ||
+            (c.phone && c.phone.includes(search))
+        );
+        setFilteredClients(filtered);
+        goToPage(1);
     }, [search, clients]);
-
-    const {
-        currentData: currentClients,
-        currentPage,
-        totalPages,
-        pageSize,
-        totalItems,
-        goToPage,
-        changePageSize
-    } = usePagination(filteredClients, 30);
 
     const fetchClients = async () => {
         try {
             setLoading(true);
-            const res = await fetch('http://localhost:3000/api/clients');
+            const res = await authFetch(`${API_BASE_URL}/api/clients`);
+            if (!res.ok) throw new Error("Failed to fetch clients");
             const data = await res.json();
-            setClients(data);
-            setFilteredClients(data);
+            const safeData = Array.isArray(data) ? data : [];
+            setClients(safeData);
+            setFilteredClients(safeData);
         } catch (err) {
             console.error(err);
         } finally {
@@ -75,12 +79,12 @@ const ClientMaster = () => {
         e.preventDefault();
         try {
             const url = editingClient
-                ? `http://localhost:3000/api/clients/${editingClient.id}`
-                : 'http://localhost:3000/api/clients';
+                ? `${API_BASE_URL}/api/clients/${editingClient.id}`
+                : `${API_BASE_URL}/api/clients`;
 
             const method = editingClient ? 'PUT' : 'POST';
 
-            const res = await fetch(url, {
+            const res = await authFetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
@@ -93,18 +97,18 @@ const ClientMaster = () => {
                 fetchClients();
             } else {
                 const err = await res.json();
-                alert('Error: ' + err.error);
+                alert(`Error: ${err.error || 'Unknown error'}`);
             }
         } catch (err) {
             console.error(err);
-            alert('Failed to save client');
+            alert(`Failed to save client: ${err.message}`);
         }
     };
 
     const handleDelete = async (id) => {
         if (!window.confirm('Are you sure you want to delete this client?')) return;
         try {
-            const res = await fetch(`http://localhost:3000/api/clients/${id}`, { method: 'DELETE' });
+            const res = await authFetch(`${API_BASE_URL}/api/clients/${id}`, { method: 'DELETE' });
             if (res.ok) fetchClients();
         } catch (err) {
             console.error(err);
@@ -114,7 +118,7 @@ const ClientMaster = () => {
     const handleBulkDelete = async () => {
         if (!window.confirm(`Delete ${selectedIds.size} clients?`)) return;
         try {
-            const res = await fetch('http://localhost:3000/api/clients/bulk', {
+            const res = await authFetch(`${API_BASE_URL}/api/clients/bulk`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ids: Array.from(selectedIds) })
@@ -130,7 +134,7 @@ const ClientMaster = () => {
 
     const handleBulkImport = async (data) => {
         try {
-            const res = await fetch('http://localhost:3000/api/clients/bulk', {
+            const res = await authFetch(`${API_BASE_URL}/api/clients/bulk`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
@@ -380,4 +384,3 @@ const ClientMaster = () => {
 };
 
 export default ClientMaster;
-

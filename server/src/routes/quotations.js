@@ -3,17 +3,25 @@ const { getDB } = require('../db');
 
 const router = express.Router();
 
-// Get all quotations
+// Get all quotations (Admin sees all, User sees own)
 router.get('/', async (req, res) => {
     try {
         const db = getDB();
-        const quotes = await db.all(`
+        let query = `
       SELECT q.*, count(qi.id) as item_count 
       FROM quotations q 
       LEFT JOIN quotation_items qi ON q.id = qi.quotation_id 
-      GROUP BY q.id 
-      ORDER BY q.date DESC, q.created_at DESC
-    `);
+    `;
+
+        const params = [];
+        if (req.user.role !== 'admin') {
+            query += ` WHERE q.user_id = ? `;
+            params.push(req.user.id);
+        }
+
+        query += ` GROUP BY q.id ORDER BY q.date DESC, q.created_at DESC`;
+
+        const quotes = await db.all(query, params);
         res.json(quotes);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -48,8 +56,8 @@ router.post('/', async (req, res) => {
         await db.exec('BEGIN TRANSACTION');
 
         const result = await db.run(
-            'INSERT INTO quotations (client_id, client_name, client_address, client_gstin, date, status, discount_type, discount_value, notes, terms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [client_id, client_name, client_address || '', client_gstin || '', date, status || 'DRAFT', discount_type, discount_value || 0, req.body.notes || '', req.body.terms || '']
+            'INSERT INTO quotations (user_id, client_id, client_name, client_address, client_gstin, date, status, discount_type, discount_value, notes, terms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [req.user.id, client_id, client_name, client_address || '', client_gstin || '', date, status || 'DRAFT', discount_type, discount_value || 0, req.body.notes || '', req.body.terms || '']
         );
         const quoteId = result.lastID;
 
@@ -99,6 +107,15 @@ router.put('/:id', async (req, res) => {
     try {
         const db = getDB();
         await db.exec('BEGIN TRANSACTION');
+
+        // Check ownership first
+        if (req.user.role !== 'admin') {
+            const existing = await db.get('SELECT id FROM quotations WHERE id = ? AND user_id = ?', [id, req.user.id]);
+            if (!existing) {
+                await db.exec('ROLLBACK');
+                return res.status(404).json({ error: 'Quotation not found or unauthorized' });
+            }
+        }
 
         // Update Quote Details
         await db.run(
@@ -165,9 +182,9 @@ router.post('/duplicate/:id', async (req, res) => {
         // 3. Insert New Quote (Status DRAFT, Today's Date)
         const today = new Date().toISOString().split('T')[0];
         const resQuote = await db.run(
-            `INSERT INTO quotations (client_id, client_name, client_address, client_gstin, date, status, discount_type, discount_value, notes, terms) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [quote.client_id, quote.client_name, quote.client_address, quote.client_gstin, today, 'DRAFT', quote.discount_type, quote.discount_value, quote.notes, quote.terms]
+            `INSERT INTO quotations (user_id, client_id, client_name, client_address, client_gstin, date, status, discount_type, discount_value, notes, terms) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [req.user.id, quote.client_id, quote.client_name, quote.client_address, quote.client_gstin, today, 'DRAFT', quote.discount_type, quote.discount_value, quote.notes, quote.terms]
         );
         const newId = resQuote.lastID;
 
@@ -211,6 +228,12 @@ router.delete('/:id', async (req, res) => {
     const { id } = req.params;
     try {
         const db = getDB();
+
+        if (req.user.role !== 'admin') {
+            const existing = await db.get('SELECT id FROM quotations WHERE id = ? AND user_id = ?', [id, req.user.id]);
+            if (!existing) return res.status(404).json({ error: 'Quotation not found or unauthorized' });
+        }
+
         await db.exec('BEGIN TRANSACTION');
         await db.run('DELETE FROM quotation_items WHERE quotation_id = ?', [id]);
         await db.run('DELETE FROM quotations WHERE id = ?', [id]);

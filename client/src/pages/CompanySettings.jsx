@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { authFetch } from '../utils/authFetch';
 import { Plus, Edit2, Trash2, CheckCircle, Smartphone, Mail, MapPin, Building, CreditCard } from 'lucide-react';
 
 import { API_BASE_URL } from '../apiConfig';
@@ -29,11 +30,21 @@ function CompanySettings() {
 
     const fetchCompanies = async () => {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/companies`);
+            const response = await authFetch(`${API_BASE_URL}/api/companies`);
+            if (!response.ok) {
+                console.error('Failed to fetch companies:', response.statusText);
+                return;
+            }
             const data = await response.json();
-            setCompanies(data);
+            if (Array.isArray(data)) {
+                setCompanies(data);
+            } else {
+                console.error('API returned non-array:', data);
+                setCompanies([]);
+            }
         } catch (error) {
             console.error('Error fetching companies:', error);
+            setCompanies([]);
         }
     };
 
@@ -46,7 +57,7 @@ function CompanySettings() {
         const method = editingCompany ? 'PUT' : 'POST';
 
         try {
-            const response = await fetch(url, {
+            const response = await authFetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
@@ -81,7 +92,7 @@ function CompanySettings() {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this company?')) {
             try {
-                await fetch(`${API_BASE_URL}/api/companies/${id}`, { method: 'DELETE' });
+                await authFetch(`${API_BASE_URL}/api/companies/${id}`, { method: 'DELETE' });
                 fetchCompanies();
             } catch (error) {
                 console.error('Error deleting company:', error);

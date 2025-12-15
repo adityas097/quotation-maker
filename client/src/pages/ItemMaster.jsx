@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { authFetch } from '../utils/authFetch';
+import { API_BASE_URL } from '../apiConfig';
 import { Upload, Plus, Trash2, Download, Search } from 'lucide-react';
 import Modal from '../components/Modal';
 import ImportWizard from '../components/ImportWizard';
@@ -8,25 +10,38 @@ import * as XLSX from 'xlsx';
 
 const ItemMaster = () => {
     const [items, setItems] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [filteredItems, setFilteredItems] = useState([]);
+    const [search, setSearch] = useState('');
+    const [loading, setLoading] = useState(false);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isImportWizardOpen, setIsImportWizardOpen] = useState(false);
-
-    // Selection & Bulk
+    const [newItem, setNewItem] = useState({
+        model_number: '',
+        name: '',
+        description: '',
+        rate: '',
+        hsn_code: '',
+        tax_rate: ''
+    });
     const [selectedIds, setSelectedIds] = useState(new Set());
-    const [search, setSearch] = useState('');
-    const [filteredItems, setFilteredItems] = useState([]);
 
-    // Form States
-    const [newItem, setNewItem] = useState({ model_number: '', name: '', description: '', rate: '', hsn_code: '', tax_rate: '' });
+    const {
+        currentPage,
+        totalPages,
+        pageSize,
+        totalItems,
+        currentItems,
+        goToPage,
+        changePageSize
+    } = usePagination(filteredItems);
 
     const ITEM_FIELDS = [
-        { key: 'name', label: 'Item Name', required: true },
-        { key: 'model_number', label: 'Model Number' },
-        { key: 'description', label: 'Description' },
-        { key: 'rate', label: 'Rate/Price' },
-        { key: 'hsn_code', label: 'HSN Code' },
-        { key: 'tax_rate', label: 'Tax Rate (%)' }
+        { label: 'Model Number', key: 'model_number', required: false },
+        { label: 'Item Name', key: 'name', required: true },
+        { label: 'Description', key: 'description' },
+        { label: 'Rate', key: 'rate', type: 'number' },
+        { label: 'HSN Code', key: 'hsn_code' },
+        { label: 'Tax Rate (%)', key: 'tax_rate', type: 'number' }
     ];
 
     useEffect(() => {
@@ -34,34 +49,25 @@ const ItemMaster = () => {
     }, []);
 
     useEffect(() => {
-        if (!search) {
-            setFilteredItems(items);
-        } else {
-            const q = search.toLowerCase();
-            setFilteredItems(items.filter(i =>
-                i.name.toLowerCase().includes(q) ||
-                (i.model_number && i.model_number.toLowerCase().includes(q))
-            ));
-        }
+        const lowerSearch = search.toLowerCase();
+        const filtered = items.filter(item =>
+            item.name.toLowerCase().includes(lowerSearch) ||
+            (item.model_number && item.model_number.toLowerCase().includes(lowerSearch)) ||
+            (item.description && item.description.toLowerCase().includes(lowerSearch))
+        );
+        setFilteredItems(filtered);
+        goToPage(1);
     }, [search, items]);
-
-    const {
-        currentData: currentItems,
-        currentPage,
-        totalPages,
-        pageSize,
-        totalItems,
-        goToPage,
-        changePageSize
-    } = usePagination(filteredItems, 30);
 
     const fetchItems = async () => {
         try {
             setLoading(true);
-            const res = await fetch('http://localhost:3000/api/items');
+            const res = await authFetch(`${API_BASE_URL}/api/items`);
+            if (!res.ok) throw new Error('Failed to fetch items');
             const data = await res.json();
-            setItems(data);
-            setFilteredItems(data);
+            const safeData = Array.isArray(data) ? data : [];
+            setItems(safeData);
+            setFilteredItems(safeData);
         } catch (err) {
             console.error(err);
         } finally {
@@ -72,7 +78,7 @@ const ItemMaster = () => {
     const handleAddItem = async (e) => {
         e.preventDefault();
         try {
-            const res = await fetch('http://localhost:3000/api/items', {
+            const res = await authFetch(`${API_BASE_URL}/api/items`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newItem)
@@ -89,7 +95,7 @@ const ItemMaster = () => {
 
     const handleBulkImport = async (data) => {
         try {
-            const res = await fetch('http://localhost:3000/api/items/bulk', {
+            const res = await authFetch(`${API_BASE_URL}/api/items/bulk`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
@@ -107,25 +113,35 @@ const ItemMaster = () => {
         }
     };
 
-    const handleToggleSelect = (id) => {
-        const newSet = new Set(selectedIds);
-        if (newSet.has(id)) newSet.delete(id);
-        else newSet.add(id);
-        setSelectedIds(newSet);
-    };
+    const handleDelete = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this item?')) return;
+        try {
+            // Since we don't have a single delete route in the router shown previously (only bulk), 
+            // we'll assume bulk delete for single item or implement single delete if it exists.
+            // Wait, I didn't verify single delete route exists in items.js, only bulk delete and get/post.
+            // Checking items.js... NO single delete route "router.delete('/:id')". 
+            // So we MUST use bulk delete for single item or add the route.
+            // I'll use bulk delete logic here for safety or add the route.
+            // Let's use bulk delete for single item to avoid backend changes if possible, 
+            // OR checks items.js again.. 
+            // items.js has: router.delete('/bulk'...) but NOT router.delete('/:id').
 
-    const handleSelectAll = (e) => {
-        if (e.target.checked) {
-            setSelectedIds(new Set(filteredItems.map(i => i.id)));
-        } else {
-            setSelectedIds(new Set());
+            // Refactoring to use bulk delete
+            const res = await authFetch(`${API_BASE_URL}/api/items/bulk`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: [id] })
+            });
+            if (res.ok) fetchItems();
+        } catch (err) {
+            console.error(err);
         }
     };
 
     const handleBulkDelete = async () => {
         if (!window.confirm(`Delete ${selectedIds.size} items?`)) return;
         try {
-            const res = await fetch('http://localhost:3000/api/items/bulk', {
+            const res = await authFetch(`${API_BASE_URL}/api/items/bulk`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ids: Array.from(selectedIds) })
@@ -144,6 +160,21 @@ const ItemMaster = () => {
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Items");
         XLSX.writeFile(wb, "Items_Export.xlsx");
+    };
+
+    const handleToggleSelect = (id) => {
+        const newSet = new Set(selectedIds);
+        if (newSet.has(id)) newSet.delete(id);
+        else newSet.add(id);
+        setSelectedIds(newSet);
+    };
+
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            setSelectedIds(new Set(filteredItems.map(i => i.id)));
+        } else {
+            setSelectedIds(new Set());
+        }
     };
 
     return (

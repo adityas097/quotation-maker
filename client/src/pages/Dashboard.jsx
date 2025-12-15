@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { LayoutDashboard, ShoppingBag, Users, FileText } from 'lucide-react';
+import { authFetch } from '../utils/authFetch';
+import { API_BASE_URL } from '../apiConfig';
 
 const Dashboard = () => {
     const [stats, setStats] = useState({ quotes: 0, items: 0, clients: 0 });
@@ -11,8 +13,8 @@ const Dashboard = () => {
         const fetchData = async () => {
             try {
                 const [quotesRes, itemsRes] = await Promise.all([
-                    fetch('http://localhost:3000/api/quotations'),
-                    fetch('http://localhost:3000/api/items')
+                    authFetch(`${API_BASE_URL}/api/quotations`),
+                    authFetch(`${API_BASE_URL}/api/items`)
                 ]);
                 const quotes = await quotesRes.json();
                 const items = await itemsRes.json();

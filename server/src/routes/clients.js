@@ -7,7 +7,14 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     try {
         const db = getDB();
-        const clients = await db.all('SELECT * FROM clients ORDER BY name');
+        let query = 'SELECT * FROM clients';
+        const params = [];
+        if (req.user.role !== 'admin') {
+            query += ' WHERE user_id = ?';
+            params.push(req.user.id);
+        }
+        query += ' ORDER BY name';
+        const clients = await db.all(query, params);
         res.json(clients);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -21,10 +28,15 @@ router.get('/search', async (req, res) => {
 
     try {
         const db = getDB();
-        const clients = await db.all(
-            'SELECT * FROM clients WHERE name LIKE ? ORDER BY name LIMIT 10',
-            [`%${q}%`]
-        );
+        let query = 'SELECT * FROM clients WHERE name LIKE ?';
+        const params = [`%${q}%`];
+        if (req.user.role !== 'admin') {
+            query += ' AND user_id = ?';
+            params.push(req.user.id);
+        }
+        query += ' ORDER BY name LIMIT 10';
+
+        const clients = await db.all(query, params);
         res.json(clients);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -41,8 +53,8 @@ router.post('/', async (req, res) => {
     try {
         const db = getDB();
         const result = await db.run(
-            'INSERT INTO clients (name, email, phone, address, gstin) VALUES (?, ?, ?, ?, ?)',
-            [name, email, phone, address, gstin || '']
+            'INSERT INTO clients (user_id, name, email, phone, address, gstin) VALUES (?, ?, ?, ?, ?, ?)',
+            [req.user.id, name, email, phone, address, gstin || '']
         );
         res.status(201).json({ id: result.lastID, name, email, phone, address, gstin });
     } catch (err) {
@@ -62,10 +74,19 @@ router.put('/:id', async (req, res) => {
 
     try {
         const db = getDB();
-        await db.run(
-            'UPDATE clients SET name = ?, email = ?, phone = ?, address = ?, gstin = ? WHERE id = ?',
-            [name, email, phone, address, gstin || '', id]
-        );
+        let query = 'UPDATE clients SET name = ?, email = ?, phone = ?, address = ?, gstin = ? WHERE id = ?';
+        const params = [name, email, phone, address, gstin || '', id];
+
+        if (req.user.role !== 'admin') {
+            query += ' AND user_id = ?';
+            params.push(req.user.id);
+        }
+
+        const result = await db.run(query, params);
+
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Client not found or not authorized' });
+        }
         res.json({ id, name, email, phone, address, gstin });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -77,9 +98,18 @@ router.delete('/:id', async (req, res) => {
     const { id } = req.params;
     try {
         const db = getDB();
-        // Check if used in quotations? Ideally yes, but soft delete is better. 
-        // For now, strict delete.
-        await db.run('DELETE FROM clients WHERE id = ?', [id]);
+        let query = 'DELETE FROM clients WHERE id = ?';
+        const params = [id];
+
+        if (req.user.role !== 'admin') {
+            query += ' AND user_id = ?';
+            params.push(req.user.id);
+        }
+
+        const result = await db.run(query, params);
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Client not found or not authorized' });
+        }
         res.json({ message: 'Client deleted' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -97,8 +127,8 @@ router.post('/bulk', async (req, res) => {
         const db = getDB();
         await db.exec('BEGIN TRANSACTION');
         const stmt = await db.prepare(`
-            INSERT INTO clients (name, email, phone, address, gstin) 
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO clients (user_id, name, email, phone, address, gstin) 
+            VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(name) DO UPDATE SET 
             email=excluded.email,
             phone=excluded.phone,
@@ -109,6 +139,7 @@ router.post('/bulk', async (req, res) => {
         for (const c of clients) {
             if (!c.name) continue;
             await stmt.run(
+                req.user.id,
                 c.name,
                 c.email || null,
                 c.phone || null,
@@ -135,7 +166,15 @@ router.delete('/bulk', async (req, res) => {
     try {
         const db = getDB();
         const placeholders = ids.map(() => '?').join(',');
-        await db.run(`DELETE FROM clients WHERE id IN (${placeholders})`, ids);
+        let query = `DELETE FROM clients WHERE id IN (${placeholders})`;
+        const params = [...ids];
+
+        if (req.user.role !== 'admin') {
+            query += ' AND user_id = ?';
+            params.push(req.user.id);
+        }
+
+        await db.run(query, params);
         res.json({ message: 'Deleted clients' });
     } catch (err) {
         res.status(500).json({ error: err.message });

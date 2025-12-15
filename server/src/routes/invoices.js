@@ -7,7 +7,14 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     try {
         const db = getDB();
-        const invoices = await db.all('SELECT * FROM invoices ORDER BY date DESC, created_at DESC');
+        let query = 'SELECT * FROM invoices';
+        const params = [];
+        if (req.user.role !== 'admin') {
+            query += ' WHERE user_id = ?';
+            params.push(req.user.id);
+        }
+        query += ' ORDER BY date DESC, created_at DESC';
+        const invoices = await db.all(query, params);
         res.json(invoices);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -55,8 +62,8 @@ router.post('/convert/:quoteId', async (req, res) => {
 
         // 5. Create Invoice
         const result = await db.run(
-            'INSERT INTO invoices (invoice_number, quotation_id, client_name, date, total_amount, status) VALUES (?, ?, ?, ?, ?, ?)',
-            [invNum, quoteId, quote.client_name, new Date().toISOString().split('T')[0], total, 'UNPAID']
+            'INSERT INTO invoices (user_id, invoice_number, quotation_id, client_name, date, total_amount, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [req.user.id, invNum, quoteId, quote.client_name, new Date().toISOString().split('T')[0], total, 'UNPAID']
         );
 
         // 6. Update Quote Status

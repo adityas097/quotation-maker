@@ -6,7 +6,13 @@ const { getDB } = require('../db');
 router.get('/', async (req, res) => {
     try {
         const db = getDB();
-        const companies = await db.all('SELECT * FROM companies');
+        let query = 'SELECT * FROM companies';
+        const params = [];
+        if (req.user.role !== 'admin') {
+            query += ' WHERE user_id = ?';
+            params.push(req.user.id);
+        }
+        const companies = await db.all(query, params);
         res.json(companies);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -39,9 +45,9 @@ router.post('/', async (req, res) => {
         }
 
         const result = await db.run(`
-            INSERT INTO companies (name, address, phone, email, gstin, pan, bank_name, account_no, ifsc, account_holder_name, upi_id, is_default)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [name, address, phone, email, gstin, pan, bank_name, account_no, ifsc, account_holder_name, upi_id, is_default ? 1 : 0]);
+            INSERT INTO companies (user_id, name, address, phone, email, gstin, pan, bank_name, account_no, ifsc, account_holder_name, upi_id, is_default)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [req.user.id, name, address, phone, email, gstin, pan, bank_name, account_no, ifsc, account_holder_name, upi_id, is_default ? 1 : 0]);
 
         const newCompany = await db.get('SELECT * FROM companies WHERE id = ?', [result.lastID]);
         res.status(201).json(newCompany);
@@ -61,7 +67,7 @@ router.put('/:id', async (req, res) => {
             await db.run('UPDATE companies SET is_default = 0');
         }
 
-        await db.run(`
+        let query = `
             UPDATE companies SET 
                 name = COALESCE(?, name),
                 address = COALESCE(?, address),
@@ -76,7 +82,16 @@ router.put('/:id', async (req, res) => {
                 upi_id = COALESCE(?, upi_id),
                 is_default = COALESCE(?, is_default)
             WHERE id = ?
-        `, [name, address, phone, email, gstin, pan, bank_name, account_no, ifsc, account_holder_name, upi_id, is_default !== undefined ? (is_default ? 1 : 0) : null, id]);
+        `;
+        const params = [name, address, phone, email, gstin, pan, bank_name, account_no, ifsc, account_holder_name, upi_id, is_default !== undefined ? (is_default ? 1 : 0) : null, id];
+
+        if (req.user.role !== 'admin') {
+            query += ' AND user_id = ?';
+            params.push(req.user.id);
+        }
+
+        const result = await db.run(query, params);
+        if (result.changes === 0) return res.status(404).json({ error: 'Company not found or unauthorized' });
 
         const updatedCompany = await db.get('SELECT * FROM companies WHERE id = ?', [id]);
         res.json(updatedCompany);
@@ -89,7 +104,16 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const db = getDB();
-        await db.run('DELETE FROM companies WHERE id = ?', [req.params.id]);
+        let query = 'DELETE FROM companies WHERE id = ?';
+        const params = [req.params.id];
+
+        if (req.user.role !== 'admin') {
+            query += ' AND user_id = ?';
+            params.push(req.user.id);
+        }
+
+        const result = await db.run(query, params);
+        if (result.changes === 0) return res.status(404).json({ error: 'Company not found or unauthorized' });
         res.json({ message: 'Company deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });

@@ -10,7 +10,14 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.get('/', async (req, res) => {
     try {
         const db = getDB();
-        const items = await db.all('SELECT * FROM items ORDER BY name');
+        let query = 'SELECT * FROM items';
+        const params = [];
+        if (req.user.role !== 'admin') {
+            query += ' WHERE user_id = ?';
+            params.push(req.user.id);
+        }
+        query += ' ORDER BY name';
+        const items = await db.all(query, params);
         res.json(items);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -26,8 +33,8 @@ router.post('/', async (req, res) => {
     try {
         const db = getDB();
         const result = await db.run(
-            'INSERT INTO items (model_number, name, description, rate, hsn_code, tax_rate) VALUES (?, ?, ?, ?, ?, ?)',
-            [model_number, name, description, rate || 0, hsn_code || '', tax_rate || 0]
+            'INSERT INTO items (user_id, model_number, name, description, rate, hsn_code, tax_rate) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [req.user.id, model_number, name, description, rate || 0, hsn_code || '', tax_rate || 0]
         );
         res.status(201).json({ id: result.lastID, model_number, name, description, rate, hsn_code, tax_rate });
     } catch (err) {
@@ -51,7 +58,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         let importedCount = 0;
 
         await db.exec('BEGIN TRANSACTION');
-        const stmt = await db.prepare('INSERT INTO items (model_number, name, description, rate, hsn_code, tax_rate) VALUES (?, ?, ?, ?, ?, ?)');
+        const stmt = await db.prepare('INSERT INTO items (user_id, model_number, name, description, rate, hsn_code, tax_rate) VALUES (?, ?, ?, ?, ?, ?, ?)');
 
         for (const row of data) {
             // Normalize keys to lowercase and trimmed for easier matching
@@ -81,7 +88,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
             }
 
             if (name) {
-                await stmt.run(model, name, desc, rate, hsn, tax);
+                await stmt.run(req.user.id, model, name, desc, rate, hsn, tax);
                 importedCount++;
             }
         }
@@ -107,8 +114,8 @@ router.post('/bulk', async (req, res) => {
         const db = getDB();
         await db.exec('BEGIN TRANSACTION');
         const stmt = await db.prepare(`
-            INSERT INTO items (model_number, name, description, rate, hsn_code, tax_rate) 
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO items (user_id, model_number, name, description, rate, hsn_code, tax_rate) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(name) DO UPDATE SET 
             model_number=excluded.model_number,
             description=excluded.description,
@@ -120,6 +127,7 @@ router.post('/bulk', async (req, res) => {
         for (const item of items) {
             if (!item.name) continue;
             await stmt.run(
+                req.user.id,
                 item.model_number || '',
                 item.name,
                 item.description || '',
@@ -148,7 +156,16 @@ router.delete('/bulk', async (req, res) => {
     try {
         const db = getDB();
         const placeholders = ids.map(() => '?').join(',');
-        await db.run(`DELETE FROM items WHERE id IN (${placeholders})`, ids);
+
+        let query = `DELETE FROM items WHERE id IN (${placeholders})`;
+        const params = [...ids];
+
+        if (req.user.role !== 'admin') {
+            query += ' AND user_id = ?';
+            params.push(req.user.id);
+        }
+
+        await db.run(query, params);
         res.json({ message: 'Deleted items' });
     } catch (err) {
         res.status(500).json({ error: err.message });
