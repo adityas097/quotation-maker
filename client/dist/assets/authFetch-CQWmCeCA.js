@@ -1,0 +1,1 @@
+const n=async(a,e={})=>{const t=localStorage.getItem("token"),o={...e.headers,"Content-Type":"application/json"};t&&(o.Authorization=`Bearer ${t}`);const r=await fetch(a,{...e,headers:o});return r.status===401?(localStorage.removeItem("token"),localStorage.removeItem("user"),window.location.href="/login",Promise.reject(new Error("Unauthorized"))):r};export{n as a};
