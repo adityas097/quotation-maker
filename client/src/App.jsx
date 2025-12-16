@@ -1,28 +1,37 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
-import ItemMaster from './pages/ItemMaster';
-import QuotationsList from './pages/QuotationsList';
-import ClientMaster from './pages/ClientMaster';
-import CreateQuote from './pages/CreateQuote';
-import QuotationView from './pages/QuotationView';
-import Billbook from './pages/Billbook';
-import CompanySettings from './pages/CompanySettings';
-import Users from './pages/Users';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import UserProfile from './pages/UserProfile';
-import SetupWizard from './pages/SetupWizard';
 import { API_BASE_URL } from './apiConfig';
+
+// Lazy Load Pages
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const ItemMaster = lazy(() => import('./pages/ItemMaster'));
+const QuotationsList = lazy(() => import('./pages/QuotationsList'));
+const ClientMaster = lazy(() => import('./pages/ClientMaster'));
+const CreateQuote = lazy(() => import('./pages/CreateQuote'));
+const QuotationView = lazy(() => import('./pages/QuotationView'));
+const Billbook = lazy(() => import('./pages/Billbook'));
+const CompanySettings = lazy(() => import('./pages/CompanySettings'));
+const Users = lazy(() => import('./pages/Users'));
+const Login = lazy(() => import('./pages/Login'));
+const Signup = lazy(() => import('./pages/Signup'));
+const UserProfile = lazy(() => import('./pages/UserProfile'));
+const SetupWizard = lazy(() => import('./pages/SetupWizard'));
+
+// Loading Spinner Component
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center h-screen bg-gray-50">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+  </div>
+);
 
 const PrivateRoute = ({ children, roles }) => {
   const { isAuthenticated, loading, user } = useAuth();
   const location = useLocation();
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <LoadingSpinner />;
   }
 
   if (!isAuthenticated) {
@@ -40,10 +49,23 @@ const PrivateRoute = ({ children, roles }) => {
 };
 
 function AppRoutes() {
-  const [isSetup, setIsSetup] = useState(true);
-  const [checkingSetup, setCheckingSetup] = useState(true);
+  // Initialize from cache if available
+  const [isSetup, setIsSetup] = useState(() => {
+    return localStorage.getItem('app_is_setup') === 'true';
+  });
+
+  // Only check if we haven't cached it as true
+  const [checkingSetup, setCheckingSetup] = useState(() => {
+    return localStorage.getItem('app_is_setup') !== 'true';
+  });
 
   useEffect(() => {
+    // If we already know setup is done, don't block, but verify in background?
+    // Actually, once setup is done, it's done. But if we cleared cache, we check again.
+    if (localStorage.getItem('app_is_setup') === 'true') {
+      return;
+    }
+
     fetch(`${API_BASE_URL}/api/setup/status`)
       .then(async res => {
         const text = await res.text();
@@ -55,62 +77,67 @@ function AppRoutes() {
         }
       })
       .then(data => {
-        if (data.isSetup === false) {
+        if (data.isSetup) {
+          setIsSetup(true);
+          localStorage.setItem('app_is_setup', 'true');
+        } else {
           setIsSetup(false);
+          localStorage.removeItem('app_is_setup');
         }
       })
       .catch((err) => {
         console.error("Setup check failed", err);
-        // If we can't reach the server, assume setup is done (to show login) or show error?
-        // Let's assume setup is done so we fall through to Login/Layout which handle their own errors.
+        // Fallback: Assume setup is done if check fails (e.g. offline or server error), 
+        // to check login.
         setCheckingSetup(false);
       })
       .finally(() => setCheckingSetup(false));
   }, []);
 
   if (checkingSetup) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return <LoadingSpinner />;
   }
 
   return (
-    <Routes>
-      {!isSetup ? (
-        <>
-          <Route path="/setup" element={<SetupWizard />} />
-          <Route path="*" element={<Navigate to="/setup" />} />
-        </>
-      ) : (
-        <>
-          <Route path="/setup" element={<Navigate to="/login" />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+    <Suspense fallback={<LoadingSpinner />}>
+      <Routes>
+        {!isSetup ? (
+          <>
+            <Route path="/setup" element={<SetupWizard />} />
+            <Route path="*" element={<Navigate to="/setup" />} />
+          </>
+        ) : (
+          <>
+            <Route path="/setup" element={<Navigate to="/login" />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
 
-          <Route path="/" element={
-            <PrivateRoute>
-              <Layout />
-            </PrivateRoute>
-          }>
-            <Route index element={<Dashboard />} />
-            <Route path="items" element={<ItemMaster />} />
-            <Route path="clients" element={<ClientMaster />} />
-            <Route path="quotations" element={<QuotationsList />} />
-            <Route path="/quotations/new" element={<CreateQuote />} />
-            <Route path="/quotations/:id/edit" element={<CreateQuote />} />
-            <Route path="/quotations/:id" element={<QuotationView />} />
-            <Route path="/billbook" element={<Billbook />} />
-            <Route path="/billbook" element={<Billbook />} />
-            <Route path="/settings" element={<CompanySettings />} />
-            <Route path="/profile" element={<UserProfile />} />
-            <Route path="/users" element={
-              <PrivateRoute roles={['admin']}>
-                <Users />
+            <Route path="/" element={
+              <PrivateRoute>
+                <Layout />
               </PrivateRoute>
-            } />
-          </Route>
-          <Route path="*" element={<Navigate to="/" />} />
-        </>
-      )}
-    </Routes>
+            }>
+              <Route index element={<Dashboard />} />
+              <Route path="items" element={<ItemMaster />} />
+              <Route path="clients" element={<ClientMaster />} />
+              <Route path="quotations" element={<QuotationsList />} />
+              <Route path="/quotations/new" element={<CreateQuote />} />
+              <Route path="/quotations/:id/edit" element={<CreateQuote />} />
+              <Route path="/quotations/:id" element={<QuotationView />} />
+              <Route path="/billbook" element={<Billbook />} />
+              <Route path="/settings" element={<CompanySettings />} />
+              <Route path="/profile" element={<UserProfile />} />
+              <Route path="/users" element={
+                <PrivateRoute roles={['admin']}>
+                  <Users />
+                </PrivateRoute>
+              } />
+            </Route>
+            <Route path="*" element={<Navigate to="/" />} />
+          </>
+        )}
+      </Routes>
+    </Suspense>
   );
 }
 

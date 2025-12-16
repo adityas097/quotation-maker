@@ -8,5 +8,16 @@ export default defineConfig({
     proxy: {
       '/api': 'http://127.0.0.1:3000'
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          firebase: ['firebase/app', 'firebase/auth'],
+          utils: ['jspdf', 'jspdf-autotable', 'lucide-react']
+        }
+      }
+    }
   }
 })
