@@ -184,10 +184,15 @@ router.post('/google-login', async (req, res) => {
             if (!isInitialized && process.env.NODE_ENV !== 'production') {
                 console.warn("⚠️ MOCKING Firebase Verification (Admin not initialized) ⚠️");
                 decodedToken = jwt.decode(idToken);
+                if (decodedToken) {
+                    // Google often puts UID in 'sub'
+                    decodedToken.uid = decodedToken.sub || decodedToken.uid || 'mock-uid-' + Date.now();
+                }
                 console.log("[GoogleLogin] Decoded (Mock):", decodedToken ? decodedToken.email : 'null');
                 if (!decodedToken) throw new Error("Invalid Token format");
             } else {
                 console.log("[GoogleLogin] Verifying with Firebase Admin...");
+                if (!isInitialized) throw new Error("Firebase Admin not initialized in Production");
                 decodedToken = await admin.auth().verifyIdToken(idToken);
                 console.log("[GoogleLogin] Verification Success. Email:", decodedToken.email);
             }
@@ -205,7 +210,24 @@ router.post('/google-login', async (req, res) => {
 
         const db = getDB();
         console.log(`[GoogleLogin] Looking up user: UID=${uid}, Email=${email}`);
-        let user = await db.get('SELECT * FROM users WHERE firebase_uid = ? OR username = ?', [uid, email]);
+
+        // Special Admin Mapping for Owner
+        if (email === 'infotecheliza@gmail.com' || email === 'elizainfotech.solutions@gmail.com') {
+            console.log(`[GoogleLogin] Detected Owner Email ${email}. Mapping to admineliza (ID 1).`);
+            let adminUser = await db.get('SELECT * FROM users WHERE id = 1');
+            if (adminUser) {
+                // Update UID if needed
+                if (adminUser.firebase_uid !== uid) {
+                    await db.run('UPDATE users SET firebase_uid = ? WHERE id = 1', [uid]);
+                    adminUser.firebase_uid = uid;
+                }
+                user = adminUser;
+            }
+        }
+
+        if (!user) {
+            user = await db.get('SELECT * FROM users WHERE firebase_uid = ? OR username = ?', [uid, email]);
+        }
 
         if (!user) {
             console.log("[GoogleLogin] Creating new user");
