@@ -14,8 +14,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
-          firebase: ['firebase/app', 'firebase/auth'],
-          utils: ['jspdf', 'jspdf-autotable', 'lucide-react']
+          firebase: ['firebase/app', 'firebase/auth']
         }
       }
     }
