@@ -45,9 +45,10 @@ router.get('/:id', async (req, res) => {
 
 // Create quotation
 router.post('/', async (req, res) => {
-    const { client_id, client_name, client_address, client_gstin, date, items, status, discount_type, discount_value } = req.body;
+    const { client_id, client_name, client_address, client_gstin, date, items, status, discount_type, discount_value, company_snapshot } = req.body;
 
     if (!client_name || !date || !items || !Array.isArray(items)) {
+        console.error("Missing required fields for Create Quote");
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -55,9 +56,11 @@ router.post('/', async (req, res) => {
         const db = getDB();
         await db.exec('BEGIN TRANSACTION');
 
+        const companySnapshotStr = company_snapshot ? JSON.stringify(company_snapshot) : null;
+
         const result = await db.run(
-            'INSERT INTO quotations (user_id, client_id, client_name, client_address, client_gstin, date, status, discount_type, discount_value, notes, terms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [req.user.id, client_id, client_name, client_address || '', client_gstin || '', date, status || 'DRAFT', discount_type, discount_value || 0, req.body.notes || '', req.body.terms || '']
+            'INSERT INTO quotations (user_id, client_id, client_name, client_address, client_gstin, date, status, discount_type, discount_value, notes, terms, company_snapshot) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [req.user.id, client_id, client_name, client_address || '', client_gstin || '', date, status || 'DRAFT', discount_type, discount_value || 0, req.body.notes || '', req.body.terms || '', companySnapshotStr]
         );
         const quoteId = result.lastID;
 
@@ -69,6 +72,10 @@ router.post('/', async (req, res) => {
     `);
 
         for (const item of items) {
+            if (!item.name) {
+                throw new Error("Item name is required for all items");
+            }
+
             const rate = item.rate || 0;
             const qty = item.quantity || 1;
             const taxableValue = (rate * qty);
@@ -102,7 +109,7 @@ router.post('/', async (req, res) => {
 // Update quotation
 router.put('/:id', async (req, res) => {
     const { id } = req.params;
-    const { client_id, client_name, client_address, client_gstin, date, items, status, discount_type, discount_value } = req.body;
+    const { client_id, client_name, client_address, client_gstin, date, items, status, discount_type, discount_value, company_snapshot } = req.body;
 
     try {
         const db = getDB();
@@ -117,10 +124,12 @@ router.put('/:id', async (req, res) => {
             }
         }
 
+        const companySnapshotStr = company_snapshot ? JSON.stringify(company_snapshot) : null;
+
         // Update Quote Details
         await db.run(
-            'UPDATE quotations SET client_id = ?, client_name = ?, client_address = ?, client_gstin = ?, date = ?, status = ?, discount_type = ?, discount_value = ?, notes = ?, terms = ? WHERE id = ?',
-            [client_id, client_name, client_address || '', client_gstin || '', date, status, discount_type, discount_value, req.body.notes || '', req.body.terms || '', id]
+            'UPDATE quotations SET client_id = ?, client_name = ?, client_address = ?, client_gstin = ?, date = ?, status = ?, discount_type = ?, discount_value = ?, notes = ?, terms = ?, company_snapshot = ? WHERE id = ?',
+            [client_id, client_name, client_address || '', client_gstin || '', date, status, discount_type, discount_value, req.body.notes || '', req.body.terms || '', companySnapshotStr, id]
         );
 
         // Delete existing items
@@ -134,6 +143,9 @@ router.put('/:id', async (req, res) => {
     `);
 
         for (const item of items) {
+            if (!item.name) {
+                throw new Error("Item name is required for all items");
+            }
             const rate = item.rate || 0;
             const qty = item.quantity || 1;
             const taxableValue = (rate * qty);

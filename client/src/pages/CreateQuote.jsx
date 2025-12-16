@@ -235,7 +235,8 @@ const CreateQuote = () => {
                 rate: parseFloat(i.rate),
                 quantity: parseFloat(i.quantity),
                 tax_rate: parseFloat(i.tax_rate)
-            }))
+            })),
+            company_snapshot: selectedCompany
         };
 
         const url = id ? `${API_BASE_URL}/api/quotations/${id}` : `${API_BASE_URL}/api/quotations`;

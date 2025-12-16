@@ -137,6 +137,13 @@ async function initDB() {
     }
   }
 
+  // Migration: Add company_snapshot
+  try {
+    await db.run("ALTER TABLE quotations ADD COLUMN company_snapshot TEXT");
+  } catch (e) {
+    // Column likely exists
+  }
+
   // Seed default admin user if none exists
   try {
     const userCount = await db.get('SELECT COUNT(*) as count FROM users');

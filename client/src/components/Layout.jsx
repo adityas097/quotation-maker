@@ -42,7 +42,7 @@ const Layout = () => {
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-slate-800">
             {/* Header */}
-            <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+            <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm no-print">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16">
 
@@ -64,8 +64,8 @@ const Layout = () => {
                                             key={item.path}
                                             to={item.path}
                                             className={`inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150 ${isActive
-                                                    ? 'text-indigo-600 bg-indigo-50'
-                                                    : 'text-gray-600 hover:text-indigo-600 hover:bg-gray-50'
+                                                ? 'text-indigo-600 bg-indigo-50'
+                                                : 'text-gray-600 hover:text-indigo-600 hover:bg-gray-50'
                                                 }`}
                                         >
                                             <Icon size={16} className="mr-1.5" />
@@ -135,8 +135,8 @@ const Layout = () => {
                                         to={item.path}
                                         onClick={closeMenu}
                                         className={`flex items-center px-3 py-3 rounded-md text-base font-medium ${isActive
-                                                ? 'text-indigo-600 bg-indigo-50'
-                                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                                            ? 'text-indigo-600 bg-indigo-50'
+                                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                                             }`}
                                     >
                                         <Icon size={18} className="mr-3" />
