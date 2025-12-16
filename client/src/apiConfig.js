@@ -9,10 +9,10 @@ const isProduction = import.meta.env.PROD;
 const getBaseUrl = () => {
     if (!isProduction) return ''; // Let Vite proxy handle it
 
-    // Construct the URL for port 3000
-    const protocol = window.location.protocol;
-    const hostname = window.location.hostname;
-    return `${protocol}//${hostname}:3000`;
+    // In production (Hostinger Shared), the Node app runs on the main domain (or /api)
+    // Port 3000 is usually blocked by firewall.
+    // We should use relative path if served from same domain.
+    return '';
 };
 
 export const API_BASE_URL = getBaseUrl();

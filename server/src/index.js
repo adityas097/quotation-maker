@@ -43,11 +43,29 @@ app.use('/api/companies', authenticateToken, require('./routes/companies'));
 // In production (Hostinger), we serve the built frontend
 // Serve static files from the React app (client/dist)
 if (process.env.NODE_ENV === 'production' || process.argv.includes('--serve-client')) {
-    app.use(express.static(path.join(__dirname, '../../client/dist')));
+    // Attempt to find client build. 
+    // On Local: ../../client/dist
+    // On Hostinger (Manual Upload): ../../ (root of public_html) if server is in public_html/server
 
-    app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, '../../client/dist', 'index.html'));
-    });
+    // We try local path first
+    let clientPath = path.join(__dirname, '../../client/dist');
+    const fs = require('fs');
+    if (!fs.existsSync(clientPath)) {
+        // Fallback for Hostinger structure where 'server' is inside 'public_html' and assets are in root 'public_html'
+        // contents of dist in ../../
+        clientPath = path.join(__dirname, '../../');
+    }
+
+    // Only serve static if we found a likely candidate (check for index.html)
+    if (fs.existsSync(path.join(clientPath, 'index.html'))) {
+        app.use(express.static(clientPath));
+        app.get('*', (req, res) => {
+            res.sendFile(path.join(clientPath, 'index.html'));
+        });
+    } else {
+        console.warn("Client build not found at", clientPath);
+        app.get('/', (req, res) => res.send("Backend Running. Client not found."));
+    }
 } else {
     app.get('/', (req, res) => {
         res.send('QuoteMaker API is running. In dev, run client separately.');

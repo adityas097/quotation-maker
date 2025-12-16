@@ -11,7 +11,13 @@ const SetupWizard = () => {
     useEffect(() => {
         // Check if setup is already complete
         fetch('/api/setup/status')
-            .then(res => res.json())
+            .then(async res => {
+                if (!res.ok) {
+                    const text = await res.text();
+                    throw new Error(`Server Status: ${res.status} - ${text.substring(0, 100)}`);
+                }
+                return res.json();
+            })
             .then(data => {
                 if (data.isSetup) {
                     navigate('/login');
@@ -52,7 +58,8 @@ const SetupWizard = () => {
                 setError(data.error || 'Setup failed');
             }
         } catch (err) {
-            setError('Network error. Please try again.');
+            console.error(err);
+            setError(`Network error: ${err.message}. Please check if server is running.`);
         } finally {
             setLoading(false);
         }
