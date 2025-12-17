@@ -1,0 +1,18 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # 1. API Proxy to Backend (Node.js on port 3000)
+  # This requires mod_proxy enabled on the server.
+  # If 500 Error occurs, mod_proxy might be disabled.
+  RewriteRule ^api/(.*)$ http://127.0.0.1:3000/api/$1 [P,L]
+
+  # 2. React Router (SPA) Fallback
+  # Serve index.html for any request that is not a file or directory
+  # This allows React Router to handle /login, /dashboard, etc.
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME} !-l
+  RewriteRule . /index.html [L]
+</IfModule>

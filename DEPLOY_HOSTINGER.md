@@ -62,6 +62,7 @@ Allows you to run the QuoteMaker app using **Node.js**.
 1.  **Upload Files**:
     -   Upload `server` folder contents to root.
     -   Upload `client/dist` folder contents to `public` (or combine them).
+    -   **Important**: Ensure `.htaccess` from `client/dist` is also uploaded to `public_html` root. This handles API redirection.
 2.  **Setup Node App**:
     -   App Entry file: `src/index.js`
     -   Run `npm install` from hPanel.
