@@ -49,93 +49,35 @@ const PrivateRoute = ({ children, roles }) => {
 };
 
 function AppRoutes() {
-  // Initialize from cache if available
-  const [isSetup, setIsSetup] = useState(() => {
-    return localStorage.getItem('app_is_setup') === 'true';
-  });
-
-  // Only check if we haven't cached it as true
-  const [checkingSetup, setCheckingSetup] = useState(() => {
-    return localStorage.getItem('app_is_setup') !== 'true';
-  });
-
-  useEffect(() => {
-    // If we already know setup is done, don't block, but verify in background?
-    // Actually, once setup is done, it's done. But if we cleared cache, we check again.
-    if (localStorage.getItem('app_is_setup') === 'true') {
-      return;
-    }
-
-    fetch(`${API_BASE_URL}/api/setup/status`)
-      .then(async res => {
-        const text = await res.text();
-        try {
-          return JSON.parse(text);
-        } catch (e) {
-          console.error("Setup check failed - Invalid JSON:", text);
-          throw new Error(`Server Error: ${res.status} ${res.statusText}`);
-        }
-      })
-      .then(data => {
-        if (data.isSetup) {
-          setIsSetup(true);
-          localStorage.setItem('app_is_setup', 'true');
-        } else {
-          setIsSetup(false);
-          localStorage.removeItem('app_is_setup');
-        }
-      })
-      .catch((err) => {
-        console.error("Setup check failed", err);
-        // Fallback: Assume setup is done if check fails (e.g. offline or server error), 
-        // to check login.
-        setCheckingSetup(false);
-      })
-      .finally(() => setCheckingSetup(false));
-  }, []);
-
-  if (checkingSetup) {
-    return <LoadingSpinner />;
-  }
-
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <Routes>
-        {!isSetup ? (
-          <>
-            <Route path="/setup" element={<SetupWizard />} />
-            <Route path="*" element={<Navigate to="/setup" />} />
-          </>
-        ) : (
-          <>
-            <Route path="/setup" element={<Navigate to="/login" />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
+        <Route path="/setup" element={<Navigate to="/login" />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
 
-            <Route path="/" element={
-              <PrivateRoute>
-                <Layout />
-              </PrivateRoute>
-            }>
-              <Route index element={<Dashboard />} />
-              <Route path="items" element={<ItemMaster />} />
-              <Route path="clients" element={<ClientMaster />} />
-              <Route path="quotations" element={<QuotationsList />} />
-              <Route path="/quotations/new" element={<CreateQuote />} />
-              <Route path="/quotations/:id/edit" element={<CreateQuote />} />
-              <Route path="/quotations/:id" element={<QuotationView />} />
-              <Route path="/billbook" element={<Billbook />} />
-              <Route path="/settings" element={<CompanySettings />} />
-              <Route path="/profile" element={<UserProfile />} />
-              <Route path="/users" element={
-                <PrivateRoute roles={['admin']}>
-                  <Users />
-                </PrivateRoute>
-              } />
-            </Route>
-            <Route path="*" element={<Navigate to="/" />} />
-          </>
-        )}
+        <Route path="/" element={
+          <PrivateRoute>
+            <Layout />
+          </PrivateRoute>
+        }>
+          <Route index element={<Dashboard />} />
+          <Route path="items" element={<ItemMaster />} />
+          <Route path="clients" element={<ClientMaster />} />
+          <Route path="quotations" element={<QuotationsList />} />
+          <Route path="/quotations/new" element={<CreateQuote />} />
+          <Route path="/quotations/:id/edit" element={<CreateQuote />} />
+          <Route path="/quotations/:id" element={<QuotationView />} />
+          <Route path="/billbook" element={<Billbook />} />
+          <Route path="/settings" element={<CompanySettings />} />
+          <Route path="/profile" element={<UserProfile />} />
+          <Route path="/users" element={
+            <PrivateRoute roles={['admin']}>
+              <Users />
+            </PrivateRoute>
+          } />
+        </Route>
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Suspense>
   );

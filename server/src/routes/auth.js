@@ -41,6 +41,11 @@ router.post('/register', async (req, res) => {
         return res.status(400).json({ error: 'Username and password are required' });
     }
 
+    const reservedNames = ['admin', 'eliza', 'admineliza', 'serveradmin', 'superuser', 'root'];
+    if (reservedNames.includes(username.toLowerCase())) {
+        return res.status(400).json({ error: 'Username is reserved and cannot be registered.' });
+    }
+
     try {
         // 1. Verify Captcha
         const isHuman = await verifyCaptcha(captchaToken);

@@ -200,6 +200,18 @@ async function initDB() {
     console.error("Company Seeding Error (Non-fatal):", seedErr);
   }
 
+  // Migration: Adopt Orphan Data (Logic moved from Setup Wizard)
+  // Ensures any data without a user_id is claimed by the Admin (ID 1)
+  try {
+    const tables = ['items', 'clients', 'quotations', 'invoices', 'companies'];
+    for (const table of tables) {
+      await db.run(`UPDATE ${table} SET user_id = 1 WHERE user_id IS NULL`);
+    }
+    console.log('Orphan data migration check completed.');
+  } catch (err) {
+    console.warn('Orphan data migration warning:', err.message);
+  }
+
   console.log('Database initialized');
   return db;
 }
