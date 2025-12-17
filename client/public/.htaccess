@@ -1,15 +1,15 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteBase /
-  
-  # Proxy API requests to Node backend
-  # Warning: mod_proxy might not be enabled on all shared hosting.
-  # If 500 Error, remove the [P] line.
+
+  # Proxy API requests to the backend (assuming it runs on port 3000)
+  # Modify the port if your Node server runs on a different port
   RewriteRule ^api/(.*)$ http://127.0.0.1:3000/api/$1 [P,L]
 
-  RewriteRule ^index\.html$ - [L]
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteCond %{REQUEST_FILENAME} !-l
-  RewriteRule . /index.html [L]
+  # Serve existing files/directories directly
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # SPA Fallback: Rewrite everything else to index.html
+  RewriteRule ^ index.html [L]
 </IfModule>

@@ -46,20 +46,30 @@ const SetupWizard = () => {
             const response = await fetch('/api/setup/init', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password }), // Firebase config omitted for initial version
+                body: JSON.stringify({ password }),
             });
+
+            // Check content type to catch HTML responses (server misconfig)
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") === -1) {
+                const text = await response.text();
+                if (text.trim().startsWith('<')) {
+                    throw new Error('Server returned HTML instead of JSON. This usually means the API request was misrouted to the frontend. Check your .htaccess or server proxy configuration.');
+                }
+                throw new Error(`Invalid server response: ${text.substring(0, 50)}...`);
+            }
 
             const data = await response.json();
 
             if (response.ok) {
                 alert('Setup Complete! Please login.');
-                window.location.href = '/login'; // Force reload to update App state
+                window.location.href = '/login';
             } else {
                 setError(data.error || 'Setup failed');
             }
         } catch (err) {
             console.error(err);
-            setError(`Network error: ${err.message}. Please check if server is running.`);
+            setError(`Setup Error: ${err.message}`);
         } finally {
             setLoading(false);
         }

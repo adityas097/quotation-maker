@@ -142,6 +142,7 @@ router.post('/google-login', async (req, res) => {
     if (!idToken) return res.status(400).json({ error: 'Missing ID Token' });
 
     try {
+        let user = null; // Declare user variable
         // 1. Verify Token with Firebase Admin
         // const decodedToken = await admin.auth().verifyIdToken(idToken);
 

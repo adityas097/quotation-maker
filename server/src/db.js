@@ -144,6 +144,20 @@ async function initDB() {
     // Column likely exists
   }
 
+  // Migration: Add parent_user_id for Sub-Accounts (Level 2)
+  try {
+    await db.run("ALTER TABLE users ADD COLUMN parent_user_id INTEGER REFERENCES users(id)");
+  } catch (e) {
+    // Column likely exists
+  }
+
+  // Migration: Add permissions for Sub-Accounts
+  try {
+    await db.run("ALTER TABLE users ADD COLUMN permissions TEXT"); // JSON string
+  } catch (e) {
+    // Column likely exists
+  }
+
   // Seed default admin user if none exists
   try {
     const userCount = await db.get('SELECT COUNT(*) as count FROM users');
