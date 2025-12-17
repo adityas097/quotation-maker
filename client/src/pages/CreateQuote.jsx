@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
 import Autocomplete from '../components/Autocomplete';
+import Modal from '../components/Modal';
 import { API_BASE_URL } from '../apiConfig';
 import { authFetch } from '../utils/authFetch';
 
@@ -20,6 +21,15 @@ const CreateQuote = () => {
     // Company State
     const [companies, setCompanies] = useState([]);
     const [selectedCompany, setSelectedCompany] = useState(null);
+
+    // Client Creation State
+    const [showClientModal, setShowClientModal] = useState(false);
+    const [newClientData, setNewClientData] = useState({ name: '', address: '', gstin: '', email: '', phone: '' });
+
+    // Item Creation State
+    const [showItemModal, setShowItemModal] = useState(false);
+    const [newItemData, setNewItemData] = useState({ name: '', model_number: '', description: '', hsn_code: '', rate: 0, tax_rate: 0 });
+    const [activeItemRow, setActiveItemRow] = useState(null);
 
     // Items State
     const [items, setItems] = useState([
@@ -208,6 +218,74 @@ const CreateQuote = () => {
 
     const { subtotal, totalTax, discountAmount, grandTotal } = calculateTotals();
 
+    const handleCreateClient = (name) => {
+        setNewClientData({ ...newClientData, name });
+        setShowClientModal(true);
+    };
+
+    const saveClient = async () => {
+        try {
+            const res = await authFetch(`${API_BASE_URL}/api/clients`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newClientData)
+            });
+            if (res.ok) {
+                const client = await res.json();
+                setClientName(client.name);
+                setClientId(client.id);
+                setClientAddress(client.address || '');
+                setClientGstin(client.gstin || '');
+                setShowClientModal(false);
+                setNewClientData({ name: '', address: '', gstin: '', email: '', phone: '' }); // Reset
+            } else {
+                const reqData = await res.json();
+                alert(`Error creating client: ${reqData.error}`);
+            }
+        } catch (error) {
+            console.error("Error creating client:", error);
+            alert("Failed to create client");
+        }
+    };
+
+    const handleCreateItem = (name) => {
+        setNewItemData({ ...newItemData, name });
+        // Use active row if set, but we might need to know which row triggered this. 
+        // Actually, Autocomplete's onCreate receives the value. 
+        // We need to know which row index to update after creation.
+        // The `Autocomplete` is inside a map, so we can pass a closure.
+        // But `onCreate` only passes the name. 
+        // I will update the render to set active row before calling creation.
+        // Wait, I can't easily capture the index if I pass `handleCreateItem` directly.
+        // I will change how I pass `onCreate` in the map loop.
+        setShowItemModal(true);
+    };
+
+    const saveItem = async () => {
+        try {
+            const res = await authFetch(`${API_BASE_URL}/api/items`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newItemData)
+            });
+            if (res.ok) {
+                const item = await res.json();
+                if (activeItemRow !== null) {
+                    handleItemSelect(activeItemRow, item);
+                }
+                setShowItemModal(false);
+                setNewItemData({ name: '', model_number: '', description: '', hsn_code: '', rate: 0, tax_rate: 0 });
+                setActiveItemRow(null);
+            } else {
+                const reqData = await res.json();
+                alert(`Error creating item: ${reqData.error}`);
+            }
+        } catch (error) {
+            console.error("Error creating item:", error);
+            alert("Failed to create item");
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -328,6 +406,7 @@ const CreateQuote = () => {
                             value={clientName}
                             onChange={setClientName}
                             onSelect={handleClientSelect}
+                            onCreate={handleCreateClient}
                             fetchSuggestions={fetchClients}
                             placeholder="Enter Client Name"
                         />
@@ -373,6 +452,10 @@ const CreateQuote = () => {
                                             value={item.name}
                                             onChange={(val) => updateItemRow(index, 'name', val)}
                                             onSelect={(selected) => handleItemSelect(index, selected)}
+                                            onCreate={(val) => {
+                                                setActiveItemRow(index);
+                                                handleCreateItem(val);
+                                            }}
                                             fetchSuggestions={fetchItems}
                                         />
                                         <div className="mt-2 grid grid-cols-2 gap-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
@@ -513,6 +596,139 @@ const CreateQuote = () => {
                     <button type="submit" className="btn btn-primary">Save Quotation</button>
                 </div>
             </form>
+
+            {/* Client Creation Modal */}
+            <Modal
+                isOpen={showClientModal}
+                onClose={() => setShowClientModal(false)}
+                title="Create New Client"
+            >
+                <div className="flex flex-col gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Client Name</label>
+                        <input
+                            type="text"
+                            className="input"
+                            value={newClientData.name}
+                            onChange={(e) => setNewClientData({ ...newClientData, name: e.target.value })}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Address</label>
+                        <textarea
+                            className="input"
+                            rows="3"
+                            value={newClientData.address}
+                            onChange={(e) => setNewClientData({ ...newClientData, address: e.target.value })}
+                        ></textarea>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">GSTIN</label>
+                            <input
+                                type="text"
+                                className="input"
+                                value={newClientData.gstin}
+                                onChange={(e) => setNewClientData({ ...newClientData, gstin: e.target.value })}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Phone</label>
+                            <input
+                                type="text"
+                                className="input"
+                                value={newClientData.phone}
+                                onChange={(e) => setNewClientData({ ...newClientData, phone: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Email</label>
+                        <input
+                            type="email"
+                            className="input"
+                            value={newClientData.email}
+                            onChange={(e) => setNewClientData({ ...newClientData, email: e.target.value })}
+                        />
+                    </div>
+                    <div className="flex justify-end gap-2 mt-4">
+                        <button type="button" onClick={() => setShowClientModal(false)} className="btn btn-secondary">Cancel</button>
+                        <button type="button" onClick={saveClient} className="btn btn-primary">Save Client</button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Item Creation Modal */}
+            <Modal
+                isOpen={showItemModal}
+                onClose={() => setShowItemModal(false)}
+                title="Create New Product"
+            >
+                <div className="flex flex-col gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Product Name</label>
+                        <input
+                            type="text"
+                            className="input"
+                            value={newItemData.name}
+                            onChange={(e) => setNewItemData({ ...newItemData, name: e.target.value })}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Description</label>
+                        <textarea
+                            className="input"
+                            rows="2"
+                            value={newItemData.description}
+                            onChange={(e) => setNewItemData({ ...newItemData, description: e.target.value })}
+                        ></textarea>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Model Number</label>
+                            <input
+                                type="text"
+                                className="input"
+                                value={newItemData.model_number}
+                                onChange={(e) => setNewItemData({ ...newItemData, model_number: e.target.value })}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">HSN Code</label>
+                            <input
+                                type="text"
+                                className="input"
+                                value={newItemData.hsn_code}
+                                onChange={(e) => setNewItemData({ ...newItemData, hsn_code: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Rate (₹)</label>
+                            <input
+                                type="number"
+                                className="input"
+                                value={newItemData.rate}
+                                onChange={(e) => setNewItemData({ ...newItemData, rate: parseFloat(e.target.value) || 0 })}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Tax Rate (%)</label>
+                            <input
+                                type="number"
+                                className="input"
+                                value={newItemData.tax_rate}
+                                onChange={(e) => setNewItemData({ ...newItemData, tax_rate: parseFloat(e.target.value) || 0 })}
+                            />
+                        </div>
+                    </div>
+                    <div className="flex justify-end gap-2 mt-4">
+                        <button type="button" onClick={() => setShowItemModal(false)} className="btn btn-secondary">Cancel</button>
+                        <button type="button" onClick={saveItem} className="btn btn-primary">Save Product</button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };

@@ -5,6 +5,7 @@ const Autocomplete = ({
     value,
     onChange,
     onSelect,
+    onCreate,
     placeholder,
     fetchSuggestions
 }) => {
@@ -45,6 +46,8 @@ const Autocomplete = ({
         return () => clearTimeout(timer);
     }, [value, isOpen, fetchSuggestions]);
 
+    const showCreateOption = onCreate && value && value.length > 1 && !suggestions.some(s => s.name.toLowerCase() === value.toLowerCase());
+
     return (
         <div className="autocomplete-wrapper" ref={wrapperRef} style={{ position: 'relative' }}>
             {label && <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{label}</label>}
@@ -60,7 +63,7 @@ const Autocomplete = ({
                 placeholder={placeholder}
             />
 
-            {isOpen && suggestions.length > 0 && (
+            {isOpen && (suggestions.length > 0 || showCreateOption) && (
                 <ul style={{
                     position: 'absolute',
                     top: '100%',
@@ -87,7 +90,7 @@ const Autocomplete = ({
                             style={{
                                 padding: '0.5rem 1rem',
                                 cursor: 'pointer',
-                                borderBottom: index === suggestions.length - 1 ? 'none' : '1px solid var(--border)',
+                                borderBottom: '1px solid var(--border)',
                             }}
                             onMouseEnter={(e) => e.target.style.background = 'var(--background)'}
                             onMouseLeave={(e) => e.target.style.background = 'white'}
@@ -95,6 +98,25 @@ const Autocomplete = ({
                             {item.label || item.name}
                         </li>
                     ))}
+                    {showCreateOption && (
+                        <li
+                            key="create-new"
+                            onClick={() => {
+                                onCreate(value);
+                                setIsOpen(false);
+                            }}
+                            style={{
+                                padding: '0.5rem 1rem',
+                                cursor: 'pointer',
+                                color: 'var(--primary-color)',
+                                fontWeight: 'bold'
+                            }}
+                            onMouseEnter={(e) => e.target.style.background = 'var(--background)'}
+                            onMouseLeave={(e) => e.target.style.background = 'white'}
+                        >
+                            + Create New: "{value}"
+                        </li>
+                    )}
                 </ul>
             )}
         </div>
