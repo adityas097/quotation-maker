@@ -48,23 +48,41 @@ if (process.env.NODE_ENV === 'production' || process.argv.includes('--serve-clie
     // On Hostinger (Manual Upload): ../../ (root of public_html) if server is in public_html/server
 
     // We try local path first
-    let clientPath = path.join(__dirname, '../../client/dist');
-    const fs = require('fs');
-    if (!fs.existsSync(clientPath)) {
-        // Fallback for Hostinger structure where 'server' is inside 'public_html' and assets are in root 'public_html'
-        // contents of dist in ../../
-        clientPath = path.join(__dirname, '../../');
-    }
+    // Determine path to client/dist (for Hostinger Shared Hosting)
+    // Structure on server:
+    // public_html/
+    //   server/
+    //     src/index.js
+    //   assets/ (from client/dist)
+    //   index.html (from client/dist)
 
-    // Only serve static if we found a likely candidate (check for index.html)
+    // So if we are in server/src/index.js, the relative path to public_html root is ../../
+    let clientPath = path.join(__dirname, '../../');
+    const fs = require('fs');
+
+    console.log("Serving static files from:", clientPath);
+
+    // Serve static assets from root if index.html exists there
     if (fs.existsSync(path.join(clientPath, 'index.html'))) {
         app.use(express.static(clientPath));
         app.get('*', (req, res) => {
+            // Don't intercept API routes (they are handled above)
+            if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'API Endpoint not found' });
             res.sendFile(path.join(clientPath, 'index.html'));
         });
     } else {
-        console.warn("Client build not found at", clientPath);
-        app.get('/', (req, res) => res.send("Backend Running. Client not found."));
+        // Fallback for local development
+        clientPath = path.join(__dirname, '../../client/dist');
+        if (fs.existsSync(path.join(clientPath, 'index.html'))) {
+            app.use(express.static(clientPath));
+            app.get('*', (req, res) => {
+                if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'API Endpoint not found' });
+                res.sendFile(path.join(clientPath, 'index.html'));
+            });
+        } else {
+            console.warn("Client build not found at", clientPath);
+            app.get('/', (req, res) => res.send("Backend Running. Client not found."));
+        }
     }
 } else {
     app.get('/', (req, res) => {
