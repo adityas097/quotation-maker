@@ -21,3 +21,8 @@ npm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# Temporary Scripts
+start_client.bat
+create_user.js
+run_app.bat
