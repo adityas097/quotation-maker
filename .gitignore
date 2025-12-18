@@ -1,0 +1,28 @@
+# Dependencies
+node_modules
+/server/node_modules
+/client/node_modules
+
+# Build Output
+dist
+build
+
+# Database
+*.sqlite
+database.sqlite
+
+# Environment Variables
+.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary Scripts
+start_client.bat
+create_user.js
+run_app.bat

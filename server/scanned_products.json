@@ -1,0 +1,596 @@
+[
+    {
+        "model": "GX-GT610 2GB D3",
+        "name": "GEONIX 2 GB D3 GRAPHIC CARD",
+        "category": "Graphic Card",
+        "raw_price": 1190
+    },
+    {
+        "model": "GX-GT730 4GB D3",
+        "name": "GEONIX 4 GB D3 GRAPHIC CARD",
+        "category": "Graphic Card",
+        "raw_price": 2250
+    },
+    {
+        "model": "88A",
+        "name": "GEONIX 88A CARTRIDGE",
+        "category": "Cartridge",
+        "raw_price": 280
+    },
+    {
+        "model": "12A",
+        "name": "GEONIX 12A CARTRIDGE",
+        "category": "Cartridge",
+        "raw_price": 280
+    },
+    {
+        "model": "",
+        "name": "GEONIX 12A POWDER 100G",
+        "category": "Cartridge",
+        "raw_price": 70
+    },
+    {
+        "model": "HDD 500GB",
+        "name": "GEONIX HDD 500GB DESKTOP",
+        "category": "Hard Disk",
+        "raw_price": 790
+    },
+    {
+        "model": "HDD 1TB",
+        "name": "GEONIX HDD 1TB DESKTOP",
+        "category": "Hard Disk",
+        "raw_price": 2210
+    },
+    {
+        "model": "HDD 2TB",
+        "name": "GEONIX HDD 2TB DESKTOP",
+        "category": "Hard Disk",
+        "raw_price": 3290
+    },
+    {
+        "model": "HDD 500GB Laptop",
+        "name": "GEONIX HDD 500GB LAPTOP",
+        "category": "Hard Disk",
+        "raw_price": 620
+    },
+    {
+        "model": "Wired Keyboard",
+        "name": "GEONIX WIRED KEYBOARD",
+        "category": "Keyboard",
+        "raw_price": 160
+    },
+    {
+        "model": "4GB DDR3 Laptop",
+        "name": "GEONIX 4GB DDR3 LAPTOP RAM",
+        "category": "RAM",
+        "raw_price": 240
+    },
+    {
+        "model": "8GB DDR3 Laptop",
+        "name": "GEONIX 8GB DDR3 LAPTOP RAM",
+        "category": "RAM",
+        "raw_price": 410
+    },
+    {
+        "model": "8GB DDR4 Laptop",
+        "name": "GEONIX 8GB DDR4 LAPTOP RAM",
+        "category": "RAM",
+        "raw_price": 740
+    },
+    {
+        "model": "8GB DDR4 Laptop 3200",
+        "name": "GEONIX 8GB DDR4 LAPTOP RAM (3200FQ)",
+        "category": "RAM",
+        "raw_price": 820
+    },
+    {
+        "model": "16GB DDR4 Laptop",
+        "name": "GEONIX 16GB DDR4 LAPTOP RAM",
+        "category": "RAM",
+        "raw_price": 1320
+    },
+    {
+        "model": "4GB DDR3 Desktop",
+        "name": "GEONIX 4GB DDR3 DESKTOP RAM",
+        "category": "RAM",
+        "raw_price": 240
+    },
+    {
+        "model": "8GB DDR3 Desktop",
+        "name": "GEONIX 8GB DDR3 DESKTOP RAM",
+        "category": "RAM",
+        "raw_price": 410
+    },
+    {
+        "model": "4GB DDR4 Desktop",
+        "name": "GEONIX 4GB DDR4 DESKTOP RAM",
+        "category": "RAM",
+        "raw_price": 500
+    },
+    {
+        "model": "8GB DDR4 Desktop",
+        "name": "GEONIX 8GB DDR4 DESKTOP RAM",
+        "category": "RAM",
+        "raw_price": 740
+    },
+    {
+        "model": "8GB DDR4 Desktop 3200",
+        "name": "GEONIX 8GB DDR4 DESKTOP RAM (3200FQ)",
+        "category": "RAM",
+        "raw_price": 790
+    },
+    {
+        "model": "16GB DDR4 Desktop",
+        "name": "GEONIX 16GB DDR4 DESKTOP RAM",
+        "category": "RAM",
+        "raw_price": 1320
+    },
+    {
+        "model": "GXTF-WVHDF171",
+        "name": "GEONIX 17\" LED MONITOR",
+        "category": "Monitor",
+        "raw_price": 1700
+    },
+    {
+        "model": "GXTF-WVHDF-185",
+        "name": "GEONIX 18.5\" LED MONITOR",
+        "category": "Monitor",
+        "raw_price": 1970
+    },
+    {
+        "model": "GXTF-WVHDF-195",
+        "name": "GEONIX 19.5\" LED MONITOR",
+        "category": "Monitor",
+        "raw_price": 2030
+    },
+    {
+        "model": "GXTF-WVHDF-22",
+        "name": "GEONIX 22\" LED MONITOR",
+        "category": "Monitor",
+        "raw_price": 2590
+    },
+    {
+        "model": "",
+        "name": "GEONIX 22\" LED BORDER LESS MONITOR",
+        "category": "Monitor",
+        "raw_price": 4050
+    },
+    {
+        "model": "",
+        "name": "GEONIX 24\" LED MONITOR",
+        "category": "Monitor",
+        "raw_price": 3370
+    },
+    {
+        "model": "GXTF-WVHDF-24",
+        "name": "GEONIX 24\" IPS PANEL MONITOR",
+        "category": "Monitor",
+        "raw_price": 5050
+    },
+    {
+        "model": "",
+        "name": "GEONIX 27\" LED MONITOR CURVED",
+        "category": "Monitor",
+        "raw_price": 6740
+    },
+    {
+        "model": "GXTF-WVHDF-32",
+        "name": "GEONIX 32\" LED CURVED BLACK",
+        "category": "Monitor",
+        "raw_price": 9420
+    },
+    {
+        "model": "H61",
+        "name": "GEONIX H61 DDR3 MOTHERBOARD NVME",
+        "category": "Motherboard",
+        "raw_price": 940
+    },
+    {
+        "model": "H81",
+        "name": "GEONIX H81 DDR3 MOTHERBOARD NVME",
+        "category": "Motherboard",
+        "raw_price": 1510
+    },
+    {
+        "model": "H110",
+        "name": "GEONIX H110 DDR4 MOTHERBOARD NVME",
+        "category": "Motherboard",
+        "raw_price": 2980
+    },
+    {
+        "model": "Wired RGB Mouse",
+        "name": "GEONIX WIRED RGB MOUSE",
+        "category": "Mouse",
+        "raw_price": 110
+    },
+    {
+        "model": "USB 2.0 16GB",
+        "name": "GEONIX PENDRIVE 16GB USB 2.0",
+        "category": "Pendrive",
+        "raw_price": 180
+    },
+    {
+        "model": "i3 2nd",
+        "name": "GEONIX i3 2ND GEN PROCESSOR",
+        "category": "Processor",
+        "raw_price": 320
+    },
+    {
+        "model": "i3 3rd",
+        "name": "GEONIX i3 3RD GEN PROCESSOR",
+        "category": "Processor",
+        "raw_price": 470
+    },
+    {
+        "model": "i5 2nd",
+        "name": "GEONIX i5 2ND GEN PROCESSOR",
+        "category": "Processor",
+        "raw_price": 820
+    },
+    {
+        "model": "i5 3rd",
+        "name": "GEONIX i5 3RD GEN PROCESSOR",
+        "category": "Processor",
+        "raw_price": 1170
+    },
+    {
+        "model": "GXWR4-5G",
+        "name": "GEONIX 4G ROUTER 4 ANTENNA",
+        "category": "Router",
+        "raw_price": 1210
+    },
+    {
+        "model": "128GB SSD",
+        "name": "GEONIX 128GB SATA SSD",
+        "category": "SSD",
+        "raw_price": 680
+    },
+    {
+        "model": "256GB SSD",
+        "name": "GEONIX 256GB SATA SSD",
+        "category": "SSD",
+        "raw_price": 980
+    },
+    {
+        "model": "512GB SSD",
+        "name": "GEONIX 512GB SATA SSD",
+        "category": "SSD",
+        "raw_price": 1900
+    },
+    {
+        "model": "128GB NVMe",
+        "name": "GEONIX 128GB NVME SSD",
+        "category": "SSD",
+        "raw_price": 860
+    },
+    {
+        "model": "256GB NVMe",
+        "name": "GEONIX 256GB NVME SSD",
+        "category": "SSD",
+        "raw_price": 1410
+    },
+    {
+        "model": "GXUP58127",
+        "name": "GEONIX UPS BATTERY 12V 7AH",
+        "category": "UPS",
+        "raw_price": 600
+    },
+    {
+        "model": "WIFI DONGLE",
+        "name": "GEONIX WIFI DONGLE",
+        "category": "Network",
+        "raw_price": 130
+    },
+    {
+        "model": "CCTV PS 4CH",
+        "name": "SS TECH CCTV Power Supply 4 Channel",
+        "category": "CCTV Power",
+        "raw_price": 250
+    },
+    {
+        "model": "CCTV PS 8CH",
+        "name": "SS TECH CCTV Power Supply 8 Channel",
+        "category": "CCTV Power",
+        "raw_price": 300
+    },
+    {
+        "model": "CCTV PS 16CH",
+        "name": "SS TECH CCTV Power Supply 16 Channel",
+        "category": "CCTV Power",
+        "raw_price": 550
+    },
+    {
+        "model": "Media Conv Pair",
+        "name": "Media Converter 10/100mbps Fiber to Lan Pair",
+        "category": "Network",
+        "raw_price": 1000
+    },
+    {
+        "model": "4G Solar PTZ",
+        "name": "4G Solar Camera Outdoor PTZ 10x Zoom",
+        "category": "Camera",
+        "raw_price": 4000
+    },
+    {
+        "model": "Wifi Baby Cam",
+        "name": "Wi-Fi Baby Cam 360 Dual Lens",
+        "category": "Camera",
+        "raw_price": 1100
+    },
+    {
+        "model": "4G 3MP PTZ",
+        "name": "4G 3MP Outdoor PTZ 360 Waterproof",
+        "category": "Camera",
+        "raw_price": 2100
+    },
+    {
+        "model": "Bulb Camera",
+        "name": "Bulb Camera Wifi 360 Degree",
+        "category": "Camera",
+        "raw_price": 750
+    },
+    {
+        "model": "5MP IP PTZ 36x",
+        "name": "5 MP IP PTZ 36X ZOOM",
+        "category": "Camera",
+        "raw_price": 14500
+    },
+    {
+        "model": "2MP HD Dome",
+        "name": "2 MP HD Camera Dome With Button & mic",
+        "category": "Camera",
+        "raw_price": 580
+    },
+    {
+        "model": "2MP HD Bullet",
+        "name": "2 MP HD Camera Bullet With Button & mic",
+        "category": "Camera",
+        "raw_price": 610
+    },
+    {
+        "model": "2MP Color Bullet",
+        "name": "2 MP HD Camera Bullet Star Light Colour",
+        "category": "Camera",
+        "raw_price": 550
+    },
+    {
+        "model": "4MP IP Dome",
+        "name": "4 MP IP Dome Star Light With Mic",
+        "category": "Camera",
+        "raw_price": 850
+    },
+    {
+        "model": "4MP IP Bullet",
+        "name": "4 MP IP Bullet Star Light With Mic & Metal Body",
+        "category": "Camera",
+        "raw_price": 920
+    },
+    {
+        "model": "Cat6 Cable 100yd",
+        "name": "Cat-6 Cable 100 Yard Box Pack",
+        "category": "Cable",
+        "raw_price": 800
+    },
+    {
+        "model": "Cat6 Cable 305m",
+        "name": "Cat-6 Cable 305 Yard Roll Outdoor Heavy Duty",
+        "category": "Cable",
+        "raw_price": 3000
+    },
+    {
+        "model": "4CH DVR 5MP",
+        "name": "4 Channel DVR 5MP Supported",
+        "category": "DVR",
+        "raw_price": 1950
+    },
+    {
+        "model": "8CH DVR 5MP",
+        "name": "8 Channel DVR 5MP Supported",
+        "category": "DVR",
+        "raw_price": 2400
+    },
+    {
+        "model": "8+2 NVR",
+        "name": "8+2 Channel NVR",
+        "category": "NVR",
+        "raw_price": 1950
+    },
+    {
+        "model": "BNC Platinum",
+        "name": "DAICHI BNC PLATINUM (Min 25pc)",
+        "category": "Connector",
+        "raw_price": 20
+    },
+    {
+        "model": "BNC Gold",
+        "name": "DAICHI BNC GOLD",
+        "category": "Connector",
+        "raw_price": 16
+    },
+    {
+        "model": "DC Platinum",
+        "name": "DAICHI DC PLATINUM (Min 50pc)",
+        "category": "Connector",
+        "raw_price": 7
+    },
+    {
+        "model": "YH31C",
+        "name": "DAICHI 4G ROUTER",
+        "category": "Router",
+        "raw_price": 1310
+    },
+    {
+        "model": "DIB34GC",
+        "name": "DAICHI 3MP 4G SIM CAMERA",
+        "category": "Camera",
+        "raw_price": 1890
+    },
+    {
+        "model": "5 Port Switch",
+        "name": "DAICHI 5 PORT NORMAL SWITCH",
+        "category": "Switch",
+        "raw_price": 410
+    },
+    {
+        "model": "8 Port Switch",
+        "name": "DAICHI 8 PORT NORMAL SWITCH",
+        "category": "Switch",
+        "raw_price": 500
+    },
+    {
+        "model": "Gigabit Switch",
+        "name": "DAICHI 5 PORT GIGA SWITCH",
+        "category": "Switch",
+        "raw_price": 640
+    },
+    {
+        "model": "HDMI 1.5m",
+        "name": "KYIRO 1.5MTR 4K HDMI CABLE (10+1 free)",
+        "category": "Cable",
+        "raw_price": 170
+    },
+    {
+        "model": "HDMI 3m",
+        "name": "KYIRO 3MTR 4K HDMI CABLE (10+1 free)",
+        "category": "Cable",
+        "raw_price": 230
+    },
+    {
+        "model": "DID2HDAC",
+        "name": "DAICHI 2MP HD DOME COLOUR AUDIO",
+        "category": "Camera",
+        "raw_price": 680
+    },
+    {
+        "model": "DIDVR4CP",
+        "name": "DAICHI 4CH DVR",
+        "category": "DVR",
+        "raw_price": 2450
+    },
+    {
+        "model": "DIDVR8CP",
+        "name": "DAICHI 8CH DVR",
+        "category": "DVR",
+        "raw_price": 2760
+    },
+    {
+        "model": "ECO 70M",
+        "name": "CCTV CABLE ECO 70MTR 3+1",
+        "category": "Cable",
+        "raw_price": 560
+    },
+    {
+        "model": "90M COPPER",
+        "name": "CCTV CABLE 90MTR COPPER 3+1",
+        "category": "Cable",
+        "raw_price": 890
+    },
+    {
+        "model": "4CH SMPS",
+        "name": "DAICHI 4 CHANNEL POWER SUPPLY",
+        "category": "CCTV Power",
+        "raw_price": 290
+    },
+    {
+        "model": "DID4ISCP",
+        "name": "DAICHI 4MP IP DOME PLASTIC BODY COLOR",
+        "category": "Camera",
+        "raw_price": 1120
+    },
+    {
+        "model": "DID8NTC",
+        "name": "DAICHI 8MP IP DOME GOLD SERIES",
+        "category": "Camera",
+        "raw_price": 2600
+    },
+    {
+        "model": "4CH POE",
+        "name": "DAICHI 4CH POE NORMAL",
+        "category": "Switch",
+        "raw_price": 870
+    },
+    {
+        "model": "2U Rack",
+        "name": "DAICHI 2U RACK",
+        "category": "Rack",
+        "raw_price": 430
+    },
+    {
+        "model": "PT-HTD700E-IP",
+        "name": "PRAMA 2MP DOME ECO",
+        "category": "Camera",
+        "raw_price": 600
+    },
+    {
+        "model": "PT-HTD110E-IP",
+        "name": "PRAMA 2MP BULLET ECO",
+        "category": "Camera",
+        "raw_price": 660
+    },
+    {
+        "model": "PT-DR1A08G-K1",
+        "name": "PRAMA 8 CHANNEL ECO DVR",
+        "category": "DVR",
+        "raw_price": 2960
+    },
+    {
+        "model": "PT-DR1A16G-K1",
+        "name": "PRAMA 16 CHANNEL ECO DVR",
+        "category": "DVR",
+        "raw_price": 5110
+    },
+    {
+        "model": "PT-HTD112E-ITPF",
+        "name": "PRAMA 2MP BULLET WITHOUT MIC",
+        "category": "Camera",
+        "raw_price": 730
+    },
+    {
+        "model": "PT-HTD702E-ITPFS",
+        "name": "PRAMA 2MP DOME WITH MIC",
+        "category": "Camera",
+        "raw_price": 730
+    },
+    {
+        "model": "PT-HTD70F0E-LPFS",
+        "name": "PRAMA 2MP DOME COLOR VIDE WITH MIC",
+        "category": "Camera",
+        "raw_price": 1040
+    },
+    {
+        "model": "PT-DR1A04Q-K1",
+        "name": "PRAMA 4CH REGULAR DVR",
+        "category": "DVR",
+        "raw_price": 3120
+    },
+    {
+        "model": "PT-HTH702E-ITPF",
+        "name": "PRAMA 5MP DOME",
+        "category": "Camera",
+        "raw_price": 990
+    },
+    {
+        "model": "PT-HTH70F0E-LPFS",
+        "name": "PRAMA 5MP DOME COLOR VIDE + MIC",
+        "category": "Camera",
+        "raw_price": 1360
+    },
+    {
+        "model": "PT-NR1A08-Q1",
+        "name": "PRAMA 8CH NVR",
+        "category": "NVR",
+        "raw_price": 3240
+    },
+    {
+        "model": "PT-NR2A04-Q1",
+        "name": "PRAMA NVR 4CH 4MP",
+        "category": "NVR",
+        "raw_price": 3970
+    },
+    {
+        "model": "PT-NRAS2A08-K2",
+        "name": "PRAMA NVR 8CH K2 4K",
+        "category": "NVR",
+        "raw_price": 6990
+    }
+]
